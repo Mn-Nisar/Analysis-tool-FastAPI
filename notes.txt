@@ -1,0 +1,3 @@
+Aelmbic:
+alembic revision --autogenerate -m "Added new fields"
+alembic upgrade head
