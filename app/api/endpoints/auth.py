@@ -62,12 +62,6 @@ async def login_user(email: str, password: str, db: Session = Depends(get_db)):
 @router.post("/token", status_code=status.HTTP_200_OK)
 async def login_for_access_token(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
                                 db: Session = Depends(get_db)):
-    print("form_data")
-    print(form_data.username)
-    print(form_data.password)
-
-    print("form_data")
-
     user = authenticate_user(form_data.username, form_data.password, db)
 
     if not user:
@@ -75,9 +69,10 @@ async def login_for_access_token(form_data:Annotated[OAuth2PasswordRequestForm, 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
         )
-    token = create_access_token(user.name, user.email, timedelta(minutes=60))
+    access_token = create_access_token(user.name, user.email, timedelta(minutes=60))
+    refresh_token = create_refresh_token(user.id, timedelta(days=7))
 
-    return {'access_token':token, 'token_type':'bearer'}
+    return {'access_token': access_token, 'token_type': 'bearer', 'refresh_token': refresh_token}
 
 def authenticate_user(email:str, password:str,db):
     user = db.query(User).filter(User.email == email).first()
@@ -93,7 +88,6 @@ def create_access_token(name:str, email:str, expires_delta: timedelta):
     return jwt.encode(encode,SECRET_KEY,algorithm=ALGORITHM)
 
 
-
 def verify_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -105,5 +99,57 @@ def verify_access_token(token: str):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+async def get_current_user(token: str = Depends(oauth2_bearer), db: Session = Depends(get_db)):
     payload = verify_access_token(token)
+    email = payload.get("id")
+
+    if email is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+    
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+    return user
+
+
+def create_refresh_token(user_id: str, expires_delta: timedelta):
+    encode = {'sub': user_id}
+    expires = datetime.utcnow() + expires_delta
+    encode.update({'exp': expires})
+    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+@router.post("/refresh-token", status_code=status.HTTP_200_OK)
+async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
+    try:
+        payload = verify_access_token(refresh_token)
+        user_id = payload.get("sub")
+
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+            )
+
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+
+        new_access_token = create_access_token(user.name, user.email, timedelta(minutes=60))
+
+        return {"access_token": new_access_token, "token_type": "bearer"}
+
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

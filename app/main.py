@@ -26,12 +26,18 @@ app.add_middleware(
 def get_settings():
     return config.Settings()
 
+user_dependecy = Annotated[dict, Depends(auth.get_current_user)]
+
 
 @app.get("/info")
 async def info(settings: Annotated[config.Settings, Depends(get_settings)]):
     return {
         "app_name": settings.app_name,
     }
+
+@app.get("/protected-route")
+async def protected_route(user: user_dependecy):
+    return {"message": f"Hello, {user}. You are authenticated!"}
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])
