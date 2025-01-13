@@ -15,4 +15,7 @@ pydantic-settings
 python-dotenv
 passlib==1.7.4
 alembic
-
+python-jose[cryptography]
+passlib==1.7.4
+python-multipart==0.0.20
+pydantic[email] 
