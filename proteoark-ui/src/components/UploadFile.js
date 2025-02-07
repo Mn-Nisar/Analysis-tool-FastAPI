@@ -28,16 +28,16 @@ const UploadFile = () => {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }   
+        }
       );
 
       const fileUrl = data.file_url;
       console.log(fileUrl);
       const response = await axios.post(
-        "http://localhost:8000/aws/save-metadata",
+        "http://localhost:8000/analysis/pre-analysis",
         {
-          noOfSample,
-          noOfControl,
+          noOfTest: noOfSample,
+          noOfControl: noOfControl,
           expType,
           fileUrl,
         }

@@ -40,7 +40,9 @@ async def protected_route(user: user_dependecy):
     return {"message": f"Hello, {user}. You are authenticated!"}
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+
 app.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])
+
 app.include_router(visualization.router, prefix="/visualization", tags=["Visualization"])
 app.include_router(aws.router, prefix="/aws", tags=["aws"])
 

@@ -17,7 +17,7 @@ SECRET_KEY = 'kje8twul$718up0(f^yfw6!*0%c3ghbx%ptmqhhg9o@s6a(#0j'
 ALGORITHM = 'HS256'
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl='token')
 
 class CreateUserRequest(BaseModel):
     name:str
@@ -32,7 +32,7 @@ class Token(BaseModel):
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def create_user(create_user_request:CreateUserRequest,db: Session = Depends(get_db),
                          ):
-    
+    print(create_user_request)
     existing_user = db.query(User).filter(User.email == create_user_request.email).first()
     if existing_user:
         raise HTTPException(
@@ -69,7 +69,7 @@ async def login_for_access_token(form_data:Annotated[OAuth2PasswordRequestForm, 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
         )
-    access_token = create_access_token(user.name, user.email, timedelta(minutes=60))
+    access_token = create_access_token(user.name, user.email, timedelta(minutes=70))
     refresh_token = create_refresh_token(user.id, timedelta(days=7))
 
     return {'access_token': access_token, 'token_type': 'bearer', 'refresh_token': refresh_token}

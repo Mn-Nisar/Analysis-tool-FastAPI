@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import as_declarative
 
 @as_declarative()
@@ -8,7 +9,21 @@ class Base:
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)  # auto_increment
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     name = Column(String(50), index=True)
     email = Column(String(100), unique=True, index=True)
     password = Column(String(255))
+    analyses = relationship("Analysis", back_populates="user")
+
+class Analysis(Base):
+    __tablename__ = "analysis"
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True) 
+    user_id = Column(Integer, ForeignKey('users.id'), index=True)  
+    no_of_test = Column(Integer)
+    no_of_control = Column(Integer)
+    no_of_batches = Column(Integer, nullable=True)
+    exp_type = Column(String(50))
+    file_url = Column(String(255))
+    file_type = Column(String(50))
+
+    user = relationship("User", back_populates="analyses")
