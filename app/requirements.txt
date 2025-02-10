@@ -27,3 +27,4 @@ scipy==2.2.1
 seaborn==0.13.2
 scikit-learn==1.6.1
 aiomysql==0.2.0
+pyarrow==19.0.0

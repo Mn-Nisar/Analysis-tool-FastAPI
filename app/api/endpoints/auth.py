@@ -196,3 +196,20 @@ async def refresh_token(
             detail="Invalid or expired refresh token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+
+
+# test user 
+# nisar@gmail.com
+# ciods_123
+# eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJuaXNhciIsImlkIjoibmlzYXJAZ21haWwuY29tIiwiZXhwIjoxNzM5MTczNzIxfQ.n62-0jxbLP8KMPRVDjnzsFUqZUiOkbna4Nusojlu_z0
+
+# {
+#   "noOfTest": 0,
+#   "noOfControl": 0,
+#   "noOfBatches": 0,
+#   "expType": "techrep",
+#   "fileUrl": "app/analysis-files/TECHNICAL.csv"
+# }
+
+# 24

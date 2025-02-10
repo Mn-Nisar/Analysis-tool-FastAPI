@@ -24,6 +24,5 @@ class Analysis(Base):
     no_of_batches = Column(Integer, nullable=True)
     exp_type = Column(String(50))
     file_url = Column(String(255))
-    file_type = Column(String(50))
 
     user = relationship("User", back_populates="analyses")
