@@ -1,43 +1,77 @@
+import pandas as pd 
+import numpy as np 
+from scipy.stats import zscore
+from scipy import stats
+from fastapi import HTTPException
 
-
-
-def data_normalization(df,columns,method):
-    if (method == 'Median'):
-        
-        mediun_list = {}
-
-        for controls in control_columns:
-            for replicates in controls:
-                mediun_list[replicates] = df[replicates].median()
+def data_normalization(df,method,tmm_propotion ,*args, **kwargs):
     
-        for samples in sample_columns:
-            for samp_replicates in samples:
-                mediun_list[samp_replicates] = df[samp_replicates].median()
-    
-        minn = min(mediun_list.values())
-        #deviding each value with multiplication factor
-        multiplication_fact_list = {}
-        for key,value in mediun_list.items():
-            multiplication_fact_list[key] = (minn/value)
+    if (method == 'median'):
+        median_dict = df.median().to_dict()
+        min_median = min(median_dict.values())
+        m_factor = {col: median / min_median for col, median in median_dict.items()}
         
-        cna = []
+        for col in df.columns:
+            df[f'normalized_{col}'] = df[col] * m_factor[col]
 
-        for controls in control_columns:
-            each_control = []
-            for replicates in controls:
-                df['NORM_'+replicates] = df[replicates] * multiplication_fact_list[replicates]
-                each_control.append('NORM_'+replicates)
-            cna.append(each_control)
+        return df
+    
+    elif (method == 'sum'):
+        mean_dict = df.mean().to_dict()
+        min_mean = min(mean_dict.values())
+        m_factor = {col: mean / min_mean for col, mean in mean_dict.items()}
+        
+        for col in df.columns:
+            df[f'normalized_{col}'] = df[col] * m_factor[col]
 
+        return df
+    
+    elif (method == 'quantile'):
+        df_main = df.copy()
+        df_sorted = pd.DataFrame(np.sort(df.values,
+                                     axis=0),
+                             index=df.index,
+                             columns=df.columns)
+        df_mean = df_sorted.mean(axis=1)
+        df_mean.index = np.arange(1, len(df_mean) + 1)
+        df_qn =df.rank(method="min").stack().astype(int).map(df_mean).unstack()
+        df_qn.rename(lambda x: "normalized_"+x, axis='columns', inplace = True)
 
-        sna = []
-        for samples in sample_columns:
-            each_sample = []
-            for samp_replicates in samples:
-                df['NORM_'+samp_replicates] = df[samp_replicates] * multiplication_fact_list[samp_replicates]
-                each_sample.append('NORM_'+samp_replicates)
-            sna.append(each_sample)
-            
-    df_PCA_before = df[exp_samp + exp_cont]
-    df_PCA_after = df[exp_sna + exp_cna]
-    return df,df_PCA_before, df_PCA_after ,cna, sna , contaminants_df
+        df_main = df_main.join(df_qn)
+        
+        return df_main
+    
+    elif (method == "irs"):
+        Q1 = df.quantile(0.25)
+        Q3 = df.quantile(0.75)
+
+        IQR = Q3 - Q1
+
+        df_irs = (df - Q1) / IQR
+
+        df_irs = df_irs.add_prefix("normalized_")
+
+        df_final = pd.concat([df, df_irs], axis=1) 
+
+        return df_final
+    
+    elif (method == "z_score"):
+        df_main = df.copy()
+        df_zscore= zscore(df)
+        df_zscore.rename(lambda x: "normalized_"+x, axis='columns', inplace = True)
+        df = df.join(df_zscore)
+
+        return df
+
+    elif method == "tmm":
+        prcount = tmm_propotion / 100
+        tmm_dict = {col: stats.trim_mean(df[col], prcount) for col in df.columns}
+        min_tmm = min(tmm_dict.values())
+        m_factor = {col: tmm / min_tmm for col, tmm in tmm_dict.items()}
+        for col in df.columns:
+            df[f'normalized_{col}'] = df[col] * m_factor[col]
+        
+        return df
+    
+    else:
+        raise HTTPException(status_code=400, detail="Choose a valid normalization method.")

@@ -15,12 +15,14 @@ def missforest_impute(df):
     return df
 
 
-def data_imputation(df,df_columns,imputation_value,imputation_method,*args, **kwargs):
+imputation_method = ["value","one_fifth","miss_forest"]
+
+def data_imputation(df,imputation_method,imputation_value,*args, **kwargs):
     
-    if imputation_method == 'impute-lowest5':
+    if imputation_method == 'one_fifth':
         df = impute_with_lowest5(df)
 
-    elif imputation_method== 'miss-forest':
+    elif imputation_method== 'miss_forest':
         df = missforest_impute(df)
     else:
         df.fillna(imputation_value, inplace = True)

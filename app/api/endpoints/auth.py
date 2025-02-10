@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
 from datetime import timedelta, datetime
 from pydantic import BaseModel, EmailStr
 from typing import Annotated
 
-from app.core.database import get_db
+from app.core.database import get_async_session
 from app.db.models import User
 from app.utils.security import hash_password, verify_password
 from passlib.context import CryptContext
@@ -30,68 +33,94 @@ class Token(BaseModel):
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def create_user(create_user_request:CreateUserRequest,db: Session = Depends(get_db),
-                         ):
+async def create_user(
+    create_user_request: CreateUserRequest, 
+    db: AsyncSession = Depends(get_async_session) 
+):
     print(create_user_request)
-    existing_user = db.query(User).filter(User.email == create_user_request.email).first()
+
+    stmt = select(User).where(User.email == create_user_request.email)
+    result = await db.execute(stmt)  
+    existing_user = result.scalars().first()
+
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email is already registered."
         )
-    
-    create_user_model = User(name=create_user_request.name,
-                            email=create_user_request.email,
-                            password=bcrypt_context.hash(create_user_request.password))
+
+    create_user_model = User(
+        name=create_user_request.name,
+        email=create_user_request.email,
+        password=bcrypt_context.hash(create_user_request.password)
+    )
+
     db.add(create_user_model)
-    db.commit() 
-    db.refresh(create_user_model)
+    await db.commit()  
+    await db.refresh(create_user_model)
+
     return {"message": "User registered successfully", "user_id": create_user_model.id}
 
 
 @router.post("/login")
-async def login_user(email: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
+async def login_user(
+    email: str, 
+    password: str, 
+    db: AsyncSession = Depends(get_async_session)  
+):
+    stmt = select(User).where(User.email == email)
+    result = await db.execute(stmt)  
+    user = result.scalars().first()
+
     if not user or not verify_password(password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
         )
+
     return {"message": "Login successful", "user_id": user.id}
 
+
 @router.post("/token", status_code=status.HTTP_200_OK)
-async def login_for_access_token(form_data:Annotated[OAuth2PasswordRequestForm, Depends()],
-                                db: Session = Depends(get_db)):
-    user = authenticate_user(form_data.username, form_data.password, db)
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], 
+    db: AsyncSession = Depends(get_async_session)  
+):
+    user = await authenticate_user(form_data.username, form_data.password, db) 
 
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
         )
+
     access_token = create_access_token(user.name, user.email, timedelta(minutes=70))
     refresh_token = create_refresh_token(user.id, timedelta(days=7))
 
     return {'access_token': access_token, 'token_type': 'bearer', 'refresh_token': refresh_token}
 
-def authenticate_user(email:str, password:str,db):
-    user = db.query(User).filter(User.email == email).first()
-    if not user or bcrypt_context.verify(bcrypt_context.hash(password), user.password):
+async def authenticate_user(email: str, password: str, db: AsyncSession):
+    stmt = select(User).where(User.email == email)
+    result = await db.execute(stmt) 
+    user = result.scalars().first()
+
+    if not user or not bcrypt_context.verify(password, user.password):  
         return False
 
     return user
 
-def create_access_token(name:str, email:str, expires_delta: timedelta):
-    encode = {'sub':name, 'id':email}
+def create_access_token(name: str, email: str, expires_delta: timedelta):
+    encode = {'sub': name, 'id': email}
     expires = datetime.utcnow() + expires_delta
-    encode.update({'exp':expires})
-    return jwt.encode(encode,SECRET_KEY,algorithm=ALGORITHM)
+    encode.update({'exp': expires})
+    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def verify_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload  # Return the decoded token payload
+
+        return payload  
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -99,7 +128,10 @@ def verify_access_token(token: str):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-async def get_current_user(token: str = Depends(oauth2_bearer), db: Session = Depends(get_db)):
+async def get_current_user(
+    token: str = Depends(oauth2_bearer), 
+    db: AsyncSession = Depends(get_async_session) 
+):
     payload = verify_access_token(token)
     email = payload.get("id")
 
@@ -109,23 +141,31 @@ async def get_current_user(token: str = Depends(oauth2_bearer), db: Session = De
             detail="Invalid token payload",
         )
     
-    user = db.query(User).filter(User.email == email).first()
+    stmt = select(User).where(User.email == email)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
+    
     return user
 
 
-def create_refresh_token(user_id: str, expires_delta: timedelta):
-    encode = {'sub': user_id}
+def create_refresh_token(user_id: int, expires_delta: timedelta):
+    print("user_iduser_iduser_iduser_iduser_iduser_iduser_iduser_id",user_id)
+    encode = {'sub': str(user_id)}
     expires = datetime.utcnow() + expires_delta
     encode.update({'exp': expires})
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 @router.post("/refresh-token", status_code=status.HTTP_200_OK)
-async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
+async def refresh_token(
+    refresh_token: str, 
+    db: AsyncSession = Depends(get_async_session) 
+):
     try:
         payload = verify_access_token(refresh_token)
         user_id = payload.get("sub")
@@ -136,7 +176,10 @@ async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
                 detail="Invalid refresh token",
             )
 
-        user = db.query(User).filter(User.id == user_id).first()
+        stmt = select(User).where(User.id == user_id)
+        result = await db.execute(stmt)  
+        user = result.scalars().first()
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
