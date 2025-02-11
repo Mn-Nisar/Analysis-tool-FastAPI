@@ -84,7 +84,10 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
 
     box_after_norm = get_box_plot(df[norm_columns],data.exp_type, title = "box plot [After normalization]",columns = data.column_data)
     
-    return {"file_url":file_url,
+    # save_normalized_data()
+
+    return {"analysis_id":data.analysis_id,
+            "file_url":file_url,
             "pca_before":pca_before_nrom,
             "pca_after":pca_after_norm,
             "box_before":box_before_norm,

@@ -24,5 +24,8 @@ class Analysis(Base):
     no_of_batches = Column(Integer, nullable=True)
     exp_type = Column(String(50))
     file_url = Column(String(255))
-
+    index_col  = Column(String(255) , nullable=True)
+    normalized_data = Column(String(255) , nullable=True)
+    resedue_data = Column(String(255) , nullable=True)
+    
     user = relationship("User", back_populates="analyses")
