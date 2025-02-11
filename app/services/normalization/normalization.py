@@ -4,7 +4,7 @@ from scipy.stats import zscore
 from scipy import stats
 from fastapi import HTTPException
 
-def data_normalization(df,method,tmm_propotion ,*args, **kwargs):
+def normalize_data(df,method,tmm_propotion ,*args, **kwargs):
     
     if (method == 'median'):
         median_dict = df.median().to_dict()

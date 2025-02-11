@@ -7,8 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_async_session
 from app.services.data_processing.data_preprocess import (get_columns , data_cleaning,
                                                            get_file_url, get_data_frame,
-                                                           filter_dataframe)
-from app.services.normalization.normalization import data_normalization
+                                                           find_index, get_normalized_columns, 
+                                                           column_dict_to_list)
+from app.services.normalization.normalization import normalize_data
 from app.services.imputation.imputation import data_imputation
 from app.services.visualization.visualization import get_pca_plot , get_box_plot
 from app.schema.schemas import MetadataRequest, Normalize
@@ -56,32 +57,39 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
     # try:
 
     file_url = await get_file_url(data, user, db)
+    
     df = get_data_frame(file_url)
     
+    df, index_col  = find_index(df,data.accession_column,data.gene_column, data.convert_protein_to_gene)
+    
+    df.set_index(index_col,inplace = True)
+
+    before_norm_columns = column_dict_to_list(data.column_data)
+
+    df, dropped_df = data_cleaning(df,data.column_data, index_col)
+
     df_copy = df.copy()
 
-    df = filter_dataframe(df,data.accession_column,data.gene_column, data.convert_protein_to_gene, data.column_data)
+    df = data_imputation(df,data.imputation_method,data.imputation_value)
 
-    # df = data_cleaning(df)
+    df = normalize_data(df, data.norm_method, data.tmm_propotion )
 
-    # df = data_imputation(df,data.imputation_method,data.imputation_value)
-
-    # norm_df = data_normalization(df, data.norm_method, data.tmm_propotion )
-
-    # normalized_columns = [c for c in norm_df.columns if "normalized_" in c ]
+    norm_columns = get_normalized_columns(df.columns)
     
-    # df_for_pca = norm_df[normalized_columns]
+    pca_before_nrom = get_pca_plot(df[before_norm_columns], title = "PCA plot [Before normalization]",columns = data.column_data )
 
-    # pca_before_nrom = get_pca_plot(df, title = "PCA plot [Before normalization]",columns = columns )
+    pca_after_norm = get_pca_plot(df[norm_columns], title = "PCA plot [After normalization]", columns = data.column_data, normalized = True)
 
-    # pca_after_norm = get_pca_plot(norm_df[normalized_columns], title = "PCA plot [After normalization]", columns = columns)
+    box_before_norm = get_box_plot(df[before_norm_columns], data.exp_type, title = "box plot [Before normalization]",columns = data.column_data)
 
-    # box_before_norm = get_box_plot(df)
+    box_after_norm = get_box_plot(df[norm_columns],data.exp_type, title = "box plot [After normalization]",columns = data.column_data)
     
-    # box_after_norm = get_box_plot(df)
-    
-    return {"file_url":file_url}
-
+    return {"file_url":file_url,
+            "pca_before":pca_before_nrom,
+            "pca_after":pca_after_norm,
+            "box_before":box_before_norm,
+            "box_after":box_after_norm,
+                        }
     
     # except Exception as e:
     #     raise HTTPException(status_code=500, detail=str(e))
