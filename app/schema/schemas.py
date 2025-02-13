@@ -26,3 +26,7 @@ class Normalize(BaseModel):
                 "control":{"126 control":["Abundance R1 126 control","Abundance R2 126 control","Abundance R3 126 control"]}
                 }
     tmm_propotion: int = 10
+
+
+class Differential(BaseModel):
+    p_value_method: Literal [""]

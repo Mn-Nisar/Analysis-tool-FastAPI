@@ -7,23 +7,14 @@ from pydantic import BaseModel
 from datetime import datetime
 from pathlib import Path
 from app.config import Settings
+from app.services.aws_s3.save_to_s3 import save_to_s3 
 import io
 
 settings = Settings()
-AWS_CREDENTIAL = settings.aws_credentials
-S3_ACCESS_ID = AWS_CREDENTIAL["aws_access_key"]
-S3_SECRET_KEY = AWS_CREDENTIAL["aws_secret_key"]
-S3_BUCKET = AWS_CREDENTIAL["s3_bucket"]
 
 PRODUCTION = settings.is_production
 
 router = APIRouter()
-
-s3_client = boto3.client(
-    "s3",
-    aws_access_key_id = S3_ACCESS_ID,
-    aws_secret_access_key= S3_SECRET_KEY,
-)
 
 
 @router.post("/upload-file")
@@ -51,13 +42,7 @@ async def upload_file_to_s3(file: UploadFile = File(...)):
         parquet_buffer.seek(0) 
         
         if PRODUCTION:
-            s3_client.upload_fileobj(
-                parquet_buffer,
-                S3_BUCKET,
-                new_filename,
-                ExtraArgs={"ContentType": "application/octet-stream"}
-            )
-            file_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{new_filename}"
+            file_url = save_to_s3.save_file(file_url, new_filename)
         else:
             local_path = Path("app/analysis-files")
             local_path.mkdir(parents=True, exist_ok=True)

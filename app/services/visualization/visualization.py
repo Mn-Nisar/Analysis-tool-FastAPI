@@ -4,27 +4,36 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 from io import BytesIO
-import base64
+from app.services.aws_s3.save_to_s3 import save_to_s3 
+from app.config import Settings
+import os
 
+settings = Settings()
+PRODUCTION = settings.is_production
 
-def generate_plot(data, file_name="plot.png"):
-    plt.plot(data)
-    path = f"app/static/{file_name}"
-    plt.savefig(path)
-    plt.close()
-    return path
-
-
-def get_graph():
+def get_s3_url(plot_titel, analysis_id):
+    
     buffer = BytesIO()
+    
     plt.savefig(buffer, format = 'svg')
+    
     buffer.seek(0)
-    image_png = buffer.getvalue()
-    graph = base64.b64encode(image_png)
-    graph = graph.decode('utf-8')
+    
+    file_name = f"plots/{str(analysis_id)}_{plot_titel}.svg" 
+    
+    if PRODUCTION:
+        file_url = save_to_s3(buffer, file_name)
+    else:
+        local_path = os.path.join(settings.local_plots_dir(), file_name)
+        with open(local_path, "wb") as f:
+            f.write(buffer.getvalue())
+        file_url = f"http://localhost:8000/plots/{file_name}"
+
     buffer.close()
     plt.close()
-    return graph
+
+    return file_url
+
 
 my_colours  = ['cyan','gold','hotpink','peru','red','navy','purple','grey','tan','steelblue',
     'peachpuff','palegreen','orchid','darkred','black','orange','teal','firebrick','indigo','orchid','darkred','black',
@@ -36,7 +45,7 @@ my_colours  = ['cyan','gold','hotpink','peru','red','navy','purple','grey','tan'
     'cyan','gold','hotpink','peru','red','navy','purple','grey','tan','steelblue','hotpink','peru','red','navy']
 
 
-def get_pca_plot(df, title, columns, normalized=False, *args, **kwargs):
+def get_pca_plot(df, title, columns, analysis_id, normalized=False, *args, **kwargs):
 
     df_pca = df.transpose()
     pca = PCA(n_components=2)
@@ -78,11 +87,11 @@ def get_pca_plot(df, title, columns, normalized=False, *args, **kwargs):
 
     plt.tight_layout()
 
-    pca_plot = get_graph()
-    
-    return pca_plot
+    get_plot_url = get_s3_url(title,analysis_id)
 
-def get_box_plot(df,isbio, title, columns, normalized=False):
+    return get_plot_url
+
+def get_box_plot(df,isbio, title, columns, analysis_id,normalized=False):
     df = np.log2(df)
     flierprops = dict(marker='o', markerfacecolor='white', markersize=3,
                   linestyle='none', markeredgecolor='black')
@@ -111,6 +120,6 @@ def get_box_plot(df,isbio, title, columns, normalized=False):
     plt.title(title)
     plt.tight_layout()
 
-    boxplot = get_graph()
-    return boxplot
+    get_plot_url = get_s3_url(title,analysis_id)
+    return get_plot_url
 

@@ -72,3 +72,4 @@ def find_index(df,accession_column,gene_column, convert_protein_to_gene):
 
 def get_normalized_columns(columns):
     return [c for c in columns if "normalized_" in c ]
+

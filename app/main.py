@@ -3,7 +3,10 @@ from functools import lru_cache
 from app.api.endpoints import aws , analysis, visualization, healthcheck ,auth
 from fastapi.middleware.cors import CORSMiddleware
 from typing_extensions import Annotated
+from fastapi.staticfiles import StaticFiles
 from . import config
+
+settings = config.Settings()
 
 origins = [
     "http://localhost:3000",  
@@ -45,5 +48,11 @@ app.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])
 
 app.include_router(visualization.router, prefix="/visualization", tags=["Visualization"])
 app.include_router(aws.router, prefix="/aws", tags=["aws"])
+
+app.mount("/plots", StaticFiles(directory=settings.local_plots_dir()), name="plots")
+app.mount("/files", StaticFiles(directory=settings.local_df_dir()), name="files")
+
+
+
 
 

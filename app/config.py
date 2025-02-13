@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+import os
 class Settings(BaseSettings):
 
     app_name: str = "API"
@@ -30,3 +30,13 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.production
+    
+    def local_plots_dir(self) -> str:
+        path = os.path.abspath("app/static_files")
+        os.makedirs(path, exist_ok=True)
+        return path
+    
+    def local_df_dir(self) -> str:
+        path = os.path.abspath("app/static_files")
+        os.makedirs(path, exist_ok=True)
+        return path

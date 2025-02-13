@@ -1,5 +1,6 @@
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.future import select
 from app.api.endpoints import auth
 from app.config import Settings
 from app.db.models import Analysis
@@ -10,9 +11,11 @@ from app.services.data_processing.data_preprocess import (get_columns , data_cle
                                                            find_index, get_normalized_columns, 
                                                            column_dict_to_list)
 from app.services.normalization.normalization import normalize_data
+from app.services.normalization.normalize_pipeline import  norm_pipeline
 from app.services.imputation.imputation import data_imputation
 from app.services.visualization.visualization import get_pca_plot , get_box_plot
-from app.schema.schemas import MetadataRequest, Normalize
+from app.schema.schemas import MetadataRequest, Normalize , Differential
+from app.services.aws_s3.save_to_s3 import save_df
 
 settings = Settings()
 
@@ -58,42 +61,34 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
 
     file_url = await get_file_url(data, user, db)
     
-    df = get_data_frame(file_url)
+
+    normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , df_copy , dropped_df = norm_pipeline(data,file_url)
+
+    # create a model to save all the files for an analysis id and save it for zipping
     
-    df, index_col  = find_index(df,data.accession_column,data.gene_column, data.convert_protein_to_gene)
+    result = await db.execute(select(Analysis).filter(Analysis.id == data.analysis_id))
+    analysis = result.scalars().first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis record not found")
     
-    df.set_index(index_col,inplace = True)
+    analysis.normalized_data = normalized_data
 
-    before_norm_columns = column_dict_to_list(data.column_data)
-
-    df, dropped_df = data_cleaning(df,data.column_data, index_col)
-
-    df_copy = df.copy()
-
-    df = data_imputation(df,data.imputation_method,data.imputation_value)
-
-    df = normalize_data(df, data.norm_method, data.tmm_propotion )
-
-    norm_columns = get_normalized_columns(df.columns)
-    
-    pca_before_nrom = get_pca_plot(df[before_norm_columns], title = "PCA plot [Before normalization]",columns = data.column_data )
-
-    pca_after_norm = get_pca_plot(df[norm_columns], title = "PCA plot [After normalization]", columns = data.column_data, normalized = True)
-
-    box_before_norm = get_box_plot(df[before_norm_columns], data.exp_type, title = "box plot [Before normalization]",columns = data.column_data)
-
-    box_after_norm = get_box_plot(df[norm_columns],data.exp_type, title = "box plot [After normalization]",columns = data.column_data)
-    
-    # save_normalized_data()
+    await db.commit()
 
     return {"analysis_id":data.analysis_id,
-            "file_url":file_url,
+            "normalized_data":normalized_data,
             "pca_before":pca_before_nrom,
             "pca_after":pca_after_norm,
             "box_before":box_before_norm,
             "box_after":box_after_norm,
                         }
-    
+
+
+@router.post("/differential-expression-analysis")
+async def differentail_analysis(data: Differential,user: dict = Depends(auth.get_current_user),
+                             db: AsyncSession = Depends(get_async_session),):
+
+    pass
     # except Exception as e:
     #     raise HTTPException(status_code=500, detail=str(e))
 
