@@ -16,6 +16,7 @@ from app.services.imputation.imputation import data_imputation
 from app.services.visualization.visualization import get_pca_plot , get_box_plot
 from app.schema.schemas import MetadataRequest, Normalize , Differential
 from app.services.aws_s3.save_to_s3 import save_df
+from app.services.differetial_exp.diff_pipeline import diff_pipeline
 
 settings = Settings()
 
@@ -63,7 +64,7 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
     file_url = await get_file_url(data, user, db)
     
 
-    normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , df_copy , dropped_df = norm_pipeline(data,file_url)
+    normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , index_col, df_copy , dropped_df = norm_pipeline(data,file_url)
 
     # create a model to save all the files for an analysis id and save it for zipping
     
@@ -73,8 +74,9 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
         raise HTTPException(status_code=404, detail="Analysis record not found")
     
     analysis.normalized_data = normalized_data
-
-    await db.commit()
+    analysis.index_col = index_col
+    db.commit()
+    # await db.commit()
 
     return {"analysis_id":data.analysis_id,
             "normalized_data":normalized_data,
@@ -88,12 +90,22 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
 @router.post("/differential-expression-analysis")
 async def differentail_analysis(data: Differential,user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session),):
+    file_url, index_col = await get_file_url(data, user, db, get_normalized=True)
 
-    pass
+    # columns = get_grouped_norm_columns()
+
+    columns = { "test":{"127N Sample":["normalized_Abundance R1 127N Sample","normalized_Abundance R3 127N Sample","normalized_Abundance R2 127N Sample"],"127C Sample":["normalized_Abundance R1 127C Sample","normalized_Abundance R3 127C Sample","normalized_Abundance R2 127C Sample"],
+                        "128N Sample":["normalized_Abundance R1 128N Sample","normalized_Abundance R3 128N Sample","normalized_Abundance R2 128N Sample"],"128C Sample":["normalized_Abundance R1 128C Sample","normalized_Abundance R3 128C Sample","normalized_Abundance R2 128C Sample"],
+                        "129N Sample":["normalized_Abundance R1 129N Sample","normalized_Abundance R3 129N Sample","normalized_Abundance R2 129N Sample"],"129C Sample":["normalized_Abundance R1 129C Sample","normalized_Abundance R3 129C Sample","normalized_Abundance R2 129C Sample"],
+                        "130N Sample":["normalized_Abundance R1 130N Sample","normalized_Abundance R3 130N Sample","normalized_Abundance R2 130N Sample"],"130C Sample":["normalized_Abundance R1 130C Sample","normalized_Abundance R3 130C Sample","normalized_Abundance R2 130C Sample"]}
+                        ,
+                "control":{"126 control":["normalized_Abundance R1 126 control","normalized_Abundance R2 126 control","normalized_Abundance R3 126 control"]}
+                }
+
+    p_value  = diff_pipeline(file_url,data, columns, index_col)
+
     # except Exception as e:
     #     raise HTTPException(status_code=500, detail=str(e))
 
 
-
-
-
+    

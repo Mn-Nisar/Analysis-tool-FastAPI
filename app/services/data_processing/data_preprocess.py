@@ -5,7 +5,7 @@ from app.db.models import Analysis
 from app.services.external_api import gprofiler_api
 
 def get_columns(url,*args, **kwargs):
-    columns = pd.read_parquet(url, columns=None).columns.tolist()
+    columns = pd.read_csv(url, columns=None).columns.tolist()
     return columns
 
 def column_dict_to_list(column_dict):
@@ -22,7 +22,7 @@ def data_cleaning(df, columns_dict, index_col):
 
     return filtered_df, dropped_df
 
-async def get_file_url(data, user, db):
+async def get_file_url(data, user, db, *args,**kwargs):
     stmt = select(Analysis).where(
         Analysis.id == data.analysis_id,
         Analysis.user_id == user.id
@@ -31,10 +31,17 @@ async def get_file_url(data, user, db):
     analysis = result.scalars().first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
-    return analysis.file_url
+    
+    if kwargs.get("get_normalized"):
+        return analysis.normalized_data, analysis.index_col
+    else:
+        return analysis.file_url
 
-def get_data_frame(url):
-    df = pd.read_parquet(url)
+def get_data_frame(url,*args,**kwargs):
+    if kwargs.get('index_col'):
+        df = pd.read_csv(url, index_col=kwargs['index_col'])
+    else:
+        df = pd.read_csv(url)
     return df
 
 

@@ -37,9 +37,9 @@ async def upload_file_to_s3(file: UploadFile = File(...)):
         else:
             return {"error": "Unsupported file format. Only CSV and Excel are allowed."}
 
-        parquet_buffer = io.BytesIO()
-        df.to_parquet(parquet_buffer, engine="pyarrow", index=False)
-        parquet_buffer.seek(0) 
+        csv_buffer = io.BytesIO()
+        df.to_csv(csv_buffer,index=False)
+        csv_buffer.seek(0) 
         
         if PRODUCTION:
             file_url = save_to_s3.save_file(file_url, new_filename)
@@ -49,11 +49,11 @@ async def upload_file_to_s3(file: UploadFile = File(...)):
             file_location = local_path / new_filename
             
             with open(file_location, "wb") as buffer:
-                buffer.write(parquet_buffer.getvalue())
+                buffer.write(csv_buffer.getvalue())
             
             file_url = str(file_location)
 
-        return {"message": "File successfully uploaded as Parquet", "file_url": file_url}
+        return {"message": "File successfully uploaded as csv", "file_url": file_url}
 
     except (NoCredentialsError, PartialCredentialsError) as e:
         raise HTTPException(status_code=500, detail="AWS credentials error")

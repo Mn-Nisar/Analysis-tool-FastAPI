@@ -39,5 +39,5 @@ def norm_pipeline(data,file_url):
 
     box_after_norm = get_box_plot(df[norm_columns],data.exp_type, title = "box plot [After normalization]",analysis_id=data.analysis_id,columns = data.column_data)
 
-    return normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , df_copy , dropped_df
+    return normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm ,index_col, df_copy , dropped_df
  
