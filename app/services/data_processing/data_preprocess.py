@@ -5,7 +5,7 @@ from app.db.models import Analysis
 from app.services.external_api import gprofiler_api
 
 def get_columns(url,*args, **kwargs):
-    columns = pd.read_csv(url, columns=None).columns.tolist()
+    columns = pd.read_csv(url, nrows=0).columns.tolist()
     return columns
 
 def column_dict_to_list(column_dict):
