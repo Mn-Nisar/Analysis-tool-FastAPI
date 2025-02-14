@@ -48,7 +48,7 @@ async def save_metadata(
 
         columns = get_columns(data.fileUrl)  
 
-        return {"analysis_id": new_analysis.id, "columns": columns, "no_of_test":data.no_of_test,"no_of_control":data.no_of_control,
+        return {"analysis_id": new_analysis.id, "columns": columns, "no_of_test":data.noOfTest,"no_of_control":data.noOfControl,
                 "exp_type":data.expType}
 
     except Exception as e:
