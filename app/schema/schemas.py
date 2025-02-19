@@ -31,8 +31,8 @@ class Normalize(BaseModel):
 class Differential(BaseModel):
     analysis_id: int
 
-    pv_method: Literal ["weltch","two_sample","one_way_anova",
-                             "two_way_anova","limma"]
+    pv_method: Literal ["weltch","ttest","one_anova",
+                             "two_anova","limma"]
     pv_cutoof:float = 0.05
     adj_pv_method:Literal["bonferroni","benjam_hoch","benjam_hekuti"]
     ratio_log2:Literal["ratio","log2_fc"]
@@ -40,7 +40,7 @@ class Differential(BaseModel):
     ratio_cut_down: float = 0.67
     log2_fc_cutoff: float = 0.5
     direct_differntial: bool = False
-
+    choose_control: str
     column_data: Dict[str, Any] = { "test":{"127N Sample":["normalized_Abundance R1 127N Sample","normalized_Abundance R3 127N Sample","normalized_Abundance R2 127N Sample"],"127C Sample":["normalized_Abundance R1 127C Sample","normalized_Abundance R3 127C Sample","normalized_Abundance R2 127C Sample"],
                         "128N Sample":["normalized_Abundance R1 128N Sample","normalized_Abundance R3 128N Sample","normalized_Abundance R2 128N Sample"],"128C Sample":["normalized_Abundance R1 128C Sample","normalized_Abundance R3 128C Sample","normalized_Abundance R2 128C Sample"],
                         "129N Sample":["normalized_Abundance R1 129N Sample","normalized_Abundance R3 129N Sample","normalized_Abundance R2 129N Sample"],"129C Sample":["normalized_Abundance R1 129C Sample","normalized_Abundance R3 129C Sample","normalized_Abundance R2 129C Sample"],

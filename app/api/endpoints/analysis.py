@@ -101,11 +101,20 @@ async def differentail_analysis(data: Differential,user: dict = Depends(auth.get
                         ,
                 "control":{"126 control":["normalized_Abundance R1 126 control","normalized_Abundance R2 126 control","normalized_Abundance R3 126 control"]}
                 }
+    
+    df,diff_df,bargraph  = diff_pipeline(file_url,data, columns, index_col)
+    final_df = save_df(df, name=f"{data.analysis_id}_final_data", file_format = "csv")
+    diff_df_url = save_df(diff_df, name=f"{data.analysis_id}_differential_data", file_format = "csv")
 
-    p_value  = diff_pipeline(file_url,data, columns, index_col)
+    return {"analysis_id":data.analysis_id,"final_df":final_df,"diff_df":diff_df_url,"bargraph":bargraph}
 
     # except Exception as e:
     #     raise HTTPException(status_code=500, detail=str(e))
 
 
-    
+
+
+@router.post("/differential-volcano-plot")
+async def volcano_plot_api(analysis_id: int,user: dict = Depends(auth.get_current_user),
+                             db: AsyncSession = Depends(get_async_session),):
+    pass
