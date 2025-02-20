@@ -33,9 +33,9 @@ class Differential(BaseModel):
 
     pv_method: Literal ["weltch","ttest","one_anova",
                              "two_anova","limma"]
-    pv_cutoof:float = 0.05
+    pv_cutoff:float = 0.05
     adj_pv_method:Literal["bonferroni","benjam_hoch","benjam_hekuti"]
-    ratio_log2:Literal["ratio","log2_fc"]
+    ratio_log2:Literal["log2_fc","ratio"]
     ratio_cut_up: float = 1.5
     ratio_cut_down: float = 0.67
     log2_fc_cutoff: float = 0.5

@@ -10,7 +10,7 @@ def diff_pipeline(file_url,data, columns, idex_col):
 
     df = calc_p_value(df,columns,data.choose_control,data.pv_method)
 
-    df, diff_df = calc_foldchange(df,columns,data.choose_control)
+    df, diff_df = calc_foldchange(df,columns,data.choose_control,data)
 
     bargraph = result_bar_graph(diff_df, data.analysis_id)
 
