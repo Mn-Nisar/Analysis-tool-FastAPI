@@ -58,7 +58,7 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
     file_url = await get_file_url(data, user, db)
     
 
-    normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , index_col, df_copy , dropped_df = norm_pipeline(data,file_url)
+    normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , index_col, control_list, df_copy , dropped_df = norm_pipeline(data,file_url)
 
     # create a model to save all the files for an analysis id and save it for zipping
     
@@ -71,13 +71,14 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
     analysis.index_col = index_col
     analysis.column_data = data.column_data
     await db.commit()
-
+    
     return {"analysis_id":data.analysis_id,
             "normalized_data":normalized_data,
             "pca_before":pca_before_nrom,
             "pca_after":pca_after_norm,
             "box_before":box_before_norm,
             "box_after":box_after_norm,
+            "control_list":control_list,
                         }
 
 

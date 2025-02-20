@@ -4,7 +4,7 @@ from app.services.aws_s3.save_to_s3 import save_df
 from app.services.data_processing.data_preprocess import ( data_cleaning,
                                                            get_data_frame,
                                                            find_index, get_normalized_columns, 
-                                                           column_dict_to_list)
+                                                           column_dict_to_list, get_control_list)
 
 from app.services.visualization.visualization import get_pca_plot , get_box_plot
 
@@ -39,5 +39,7 @@ def norm_pipeline(data,file_url):
 
     box_after_norm = get_box_plot(df[norm_columns],data.exp_type, title = "box plot [After normalization]",analysis_id=data.analysis_id,columns = data.column_data)
 
-    return normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm ,index_col, df_copy , dropped_df
+    control_list = get_control_list(data.column_data)
+
+    return normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm ,index_col,control_list, df_copy , dropped_df
  

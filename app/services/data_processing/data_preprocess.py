@@ -87,3 +87,6 @@ def get_norm_columns(columns_data):
             samples[sample] = [f"normalized_{val}" for val in values]
     return columns_data
 
+
+def get_control_list(columns_data):
+    return list(columns_data["control"].keys())
