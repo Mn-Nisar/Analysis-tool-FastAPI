@@ -33,7 +33,8 @@ async def get_file_url(data, user, db, *args,**kwargs):
         raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
     
     if kwargs.get("get_normalized"):
-        return analysis.normalized_data, analysis.index_col
+        return analysis.normalized_data, analysis.index_col. analysis.column_data
+    
     else:
         return analysis.file_url
 
@@ -79,4 +80,10 @@ def find_index(df,accession_column,gene_column, convert_protein_to_gene):
 
 def get_normalized_columns(columns):
     return [c for c in columns if "normalized_" in c ]
+
+def get_norm_columns(columns_data):
+    for category, samples in columns_data.items():
+        for sample, values in samples.items():
+            samples[sample] = [f"normalized_{val}" for val in values]
+    return columns_data
 

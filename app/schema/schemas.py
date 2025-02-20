@@ -11,7 +11,7 @@ class MetadataRequest(BaseModel):
 class Normalize(BaseModel):
     analysis_id: int
     norm_method: Literal["median","sum","quantile","irs","z_score","tmm"]
-    exp_type: Literal["biological", "technical"]
+    exp_type: Literal["techrep","biorep"]
     imputation_value: float = 0
     imputation_method: Literal["value","one_fifth","miss_forest"]
     remove_contamination: bool = False

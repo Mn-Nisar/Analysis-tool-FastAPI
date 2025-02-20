@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import as_declarative
+from sqlalchemy import JSON
 
 @as_declarative()
 class Base:
@@ -27,5 +28,5 @@ class Analysis(Base):
     index_col  = Column(String(255) , nullable=True)
     normalized_data = Column(String(255) , nullable=True)
     resedue_data = Column(String(255) , nullable=True)
-    
+    column_data = Column(JSON, nullable=True)
     user = relationship("User", back_populates="analyses")
