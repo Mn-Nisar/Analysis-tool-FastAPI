@@ -14,7 +14,6 @@ from app.services.differetial_exp.diff_pipeline import diff_pipeline
 
 settings = Settings()
 
-PRODUCTION = settings.is_production
 
 router = APIRouter(dependencies=[Depends(auth.get_current_user)])
         

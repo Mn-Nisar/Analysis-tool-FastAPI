@@ -6,8 +6,9 @@ from app.services.visualization.visualization import result_bar_graph
 
 def diff_pipeline(file_url,data, columns, idex_col):
     
-    df = get_data_frame(file_url,index_col=idex_col)
+    print(file_url)
 
+    df = get_data_frame(file_url,index_col=idex_col)
     df = calc_p_value(df,columns,data.choose_control,data.pv_method)
 
     df, diff_df = calc_foldchange(df,columns,data.choose_control,data)

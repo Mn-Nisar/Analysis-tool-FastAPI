@@ -1,8 +1,14 @@
+import os
 from fastapi import HTTPException
 import pandas as pd
 from sqlalchemy.future import select
 from app.db.models import Analysis
 from app.services.external_api import gprofiler_api
+from app.config import Settings
+
+settings = Settings()
+
+PRODUCTION = settings.is_production
 
 def get_columns(url,*args, **kwargs):
     columns = pd.read_csv(url, nrows=0).columns.tolist()
@@ -33,18 +39,27 @@ async def get_file_url(data, user, db, *args,**kwargs):
         raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
     
     if kwargs.get("get_normalized"):
-        return analysis.normalized_data, analysis.index_col. analysis.column_data
+        return analysis.normalized_data, analysis.index_col, analysis.column_data
     
     else:
         return analysis.file_url
 
 def get_data_frame(url,*args,**kwargs):
-    if kwargs.get('index_col'):
-        df = pd.read_csv(url, index_col=kwargs['index_col'])
-    else:
-        df = pd.read_csv(url)
-    return df
+    if PRODUCTION:
+        if kwargs.get('index_col'):
 
+            df = pd.read_csv(url, index_col=kwargs['index_col'])
+        else:
+            df = pd.read_csv(url)
+        return df
+    else:
+        filename = url.split("/")[-1].strip()
+        local_path = os.path.join("app", "static_files", filename)        
+        if kwargs.get('index_col'):
+            df = pd.read_csv(local_path, index_col=kwargs['index_col'])
+        else:
+            df = pd.read_csv(url)
+        return df
 
 def modify_duplicates(val):
     occurrences = {}
