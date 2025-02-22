@@ -2,6 +2,8 @@ from app.config import Settings
 import boto3
 import io 
 import os
+from datetime import datetime
+import random
 
 settings = Settings()
 AWS_CREDENTIAL = settings.aws_credentials
@@ -31,7 +33,6 @@ def save_df(df,name,file_format):
 
     buffer = io.BytesIO()
     if file_format == "csv":
-        print(df)
         df.to_csv(buffer)  # Save CSV to buffer
 
     buffer.seek(0)  # Reset buffer pointer to start
@@ -46,3 +47,12 @@ def save_df(df,name,file_format):
         file_url = f"http://localhost:8000/files/{file_name}"
     
     return file_url
+
+def save_lable_free_df(df):
+    
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    random_num = random.randint(1000, 9999)
+    file_name = f"lable_free-result_{timestamp}_{random_num}.csv"
+
+    url = save_df(df, file_name, "csv")
+    return url

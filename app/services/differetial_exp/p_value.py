@@ -67,23 +67,23 @@ def calc_p_value(df,columns,control_name,p_val_type):
             df[s+"_avg"] = df[columns["test"][s]].mean(axis=1)
             
             _,df["p_value_"+s]= stats.ttest_ind(df[columns["control"][control_name]],df[columns["test"][s]],axis=1, equal_var = False)
-            df["-log10_pvalue"+s] = abs(np.log10(df["p_value_"+s]))
+            df["minus_log10_pvalue"+s] = abs(np.log10(df["p_value_"+s]))
     
     elif p_val_type == "ttest":
         for s in columns["test"]:
             df[s+"_avg"] = df[columns["test"][s]].mean(axis=1)
 
             _,df["p_value_"+s]= stats.ttest_ind(df[columns["control"][control_name]],df[columns["test"][s]],axis=1, equal_var = True)
-            df["-log10_pvalue"+s] = abs(np.log10(df["p_value_"+s]))
+            df["minus_log10_pvalue"+s] = abs(np.log10(df["p_value_"+s]))
     
     elif p_val_type == 'two_anova':
         
         df['p_value_2_way_anova'] = df.apply(lambda x: perform_two_way_anova(x, columns), axis=1)
-        df["-log10_pvalue"] = abs(np.log10(df["p_value_2_way_anova"]))
+        df["minus_log10_pvalue"] = abs(np.log10(df["p_value_2_way_anova"]))
 
     elif p_val_type== "one_anova":
         df['p_value_one_way_anova'] = df.apply(lambda x: perform_one_way_anova(x, columns), axis=1)
-        df["-log10_pvalue"] = abs(np.log10(df["p_value_one_way_anova"]))
+        df["minus_log10_pvalue"] = abs(np.log10(df["p_value_one_way_anova"]))
 
 
     elif p_val_type== "limma":

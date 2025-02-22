@@ -105,3 +105,8 @@ def get_norm_columns(columns_data):
 
 def get_control_list(columns_data):
     return list(columns_data["control"].keys())
+
+def get_lbl_free_file_url(data):
+    df = pd.read_csv(data.analysis_file)
+    fasta_url = data.fasta_url
+    return df, fasta_url

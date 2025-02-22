@@ -31,6 +31,8 @@ class Token(BaseModel):
     access_token: str
     Token_type: str
 
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def create_user(
@@ -161,12 +163,15 @@ def create_refresh_token(user_id: int, expires_delta: timedelta):
     encode.update({'exp': expires})
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
 @router.post("/refresh-token", status_code=status.HTTP_200_OK)
 async def refresh_token(
-    refresh_token: str, 
+    request: TokenRefreshRequest,
     db: AsyncSession = Depends(get_async_session) 
 ):
     try:
+        refresh_token = request.refresh_token
+
         payload = verify_access_token(refresh_token)
         user_id = payload.get("sub")
 

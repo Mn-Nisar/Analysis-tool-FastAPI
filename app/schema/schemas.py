@@ -51,3 +51,12 @@ class Differential(BaseModel):
 
 
 
+class LableFree(BaseModel):
+    quant_method:  Literal ["ibaq","nsaf","top3"]
+    digest_enzyme: Literal ["trypsin","lysc","chymotrypsin"]
+    fasta_url: str
+    fasta_source: Literal ["ncbi","uniprot"]
+    miss_cleavage: int = 1
+    min_peptide: int = 6
+    max_peptide: int = 22
+    analysis_file: str
