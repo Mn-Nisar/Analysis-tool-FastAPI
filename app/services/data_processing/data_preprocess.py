@@ -44,6 +44,19 @@ async def get_file_url(data, user, db, *args,**kwargs):
     else:
         return analysis.file_url
 
+async def get_normalized_data_bc(analysis_id, user, db, *args,**kwargs):
+    stmt = select(Analysis).where(
+        Analysis.id == analysis_id,
+        Analysis.user_id == user.id
+    )
+    result = await db.execute(stmt)
+    analysis = result.scalars().first()
+    if not analysis:    
+        raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
+    return analysis.normalized_data, analysis.index_col, analysis.batch_data, analysis.column_data
+
+
+
 def get_data_frame(url,*args,**kwargs):
     if PRODUCTION:
         if kwargs.get('index_col'):

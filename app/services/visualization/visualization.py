@@ -92,7 +92,7 @@ def get_pca_plot(df, title, columns, analysis_id, normalized=False, *args, **kwa
 
     return get_plot_url
 
-def get_box_plot(df,isbio, title, columns, analysis_id,normalized=False):
+def get_box_plot(df, title, columns, analysis_id,normalized=False):
     df = np.log2(df)
     flierprops = dict(marker='o', markerfacecolor='white', markersize=3,
                   linestyle='none', markeredgecolor='black')

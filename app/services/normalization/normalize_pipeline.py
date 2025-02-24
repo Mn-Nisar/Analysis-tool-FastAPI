@@ -35,9 +35,9 @@ def norm_pipeline(data,file_url):
 
     pca_after_norm = get_pca_plot(df[norm_columns], title = "PCA plot [After normalization]", columns = data.column_data,analysis_id=data.analysis_id, normalized = True)
 
-    box_before_norm = get_box_plot(df[before_norm_columns], data.exp_type, title = "box plot [Before normalization]",analysis_id=data.analysis_id,columns = data.column_data)
+    box_before_norm = get_box_plot(df[before_norm_columns], title = "box plot [Before normalization]",analysis_id=data.analysis_id,columns = data.column_data)
 
-    box_after_norm = get_box_plot(df[norm_columns],data.exp_type, title = "box plot [After normalization]",analysis_id=data.analysis_id,columns = data.column_data)
+    box_after_norm = get_box_plot(df[norm_columns], title = "box plot [After normalization]",analysis_id=data.analysis_id,columns = data.column_data)
 
     control_list = get_control_list(data.column_data)
 
