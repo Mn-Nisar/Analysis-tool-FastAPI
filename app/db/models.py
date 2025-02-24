@@ -28,6 +28,8 @@ class Analysis(Base):
     normalized_data = Column(String(255) , nullable=True)
     resedue_data = Column(String(255) , nullable=True)
     column_data = Column(JSON, nullable=True)
+
+    batch_data = Column(JSON, nullable=True)
     pv_method = Column(String(50), nullable=True)
     pv_cutoff = Column(Float, nullable=True)
     ratio_up = Column(Float, nullable=True)

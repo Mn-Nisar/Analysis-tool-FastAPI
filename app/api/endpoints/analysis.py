@@ -70,6 +70,7 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
     analysis.normalized_data = normalized_data
     analysis.index_col = index_col
     analysis.column_data = data.column_data
+    analysis.batch_data = data.batch_data
     await db.commit()
     
     return {"analysis_id":data.analysis_id,
@@ -144,6 +145,15 @@ async def lable_free(data: LableFree, user: dict = Depends(auth.get_current_user
         return {"result_url":result_url,"result_head":result_head}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/batch-correction")
+async def batch_correction(analysis_id: int ,user: dict = Depends(auth.get_current_user),
+                             db: AsyncSession = Depends(get_async_session),):
+    
+    
+
+
 
 
 @router.post("/differential-volcano-plot")

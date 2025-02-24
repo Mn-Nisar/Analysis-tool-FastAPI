@@ -26,6 +26,14 @@ class Normalize(BaseModel):
                 "control":{"126 control":["Abundance R1 126 control","Abundance R2 126 control","Abundance R3 126 control"]}
                 }
     tmm_propotion: int = 10
+    
+    batch_data: Optional[Dict[str, Any]] = { "batch1":{"test":["Abundance R1 127N Sample","Abundance R1 127C Sample","Abundance R1 128N Sample","Abundance R1 128C Sample","Abundance R1 129N Sample","Abundance R1 129C Sample","Abundance R1 130N Sample","Abundance R1 130C Sample"],
+                    "control":["Abundance R1 126 control"]},
+        "batch2":{"test":["Abundance R2 127N Sample","Abundance R2 127C Sample","Abundance R2 128N Sample","Abundance R2 128C Sample","Abundance R2 129N Sample","Abundance R2 129C Sample","Abundance R2 130N Sample","Abundance R2 130C Sample"],
+                    "control":["Abundance R2 126 control"]},
+        "batch3":{"test":["Abundance R3 127N Sample","Abundance R3 127C Sample","Abundance R3 128N Sample","Abundance R3 128C Sample","Abundance R3 129N Sample","Abundance R3 129C Sample","Abundance R3 130N Sample","Abundance R3 130C Sample"],
+                    "control":["Abundance R3 126 control"]},
+    }
 
 
 class Differential(BaseModel):
@@ -48,8 +56,6 @@ class Differential(BaseModel):
                         ,
                 "control":{"126 control":["normalized_Abundance R1 126 control","normalized_Abundance R2 126 control","normalized_Abundance R3 126 control"]}
                 }
-
-
 
 class LableFree(BaseModel):
     quant_method:  Literal ["ibaq","nsaf","top3"]
