@@ -28,9 +28,9 @@ def data_cleaning(df, columns_dict, index_col):
 
     return filtered_df, dropped_df
 
-async def get_file_url(data, user, db, *args,**kwargs):
+async def get_file_url(analysis_id, user, db, *args,**kwargs):
     stmt = select(Analysis).where(
-        Analysis.id == data.analysis_id,
+        Analysis.id == analysis_id,
         Analysis.user_id == user.id
     )
     result = await db.execute(stmt)
@@ -43,6 +43,53 @@ async def get_file_url(data, user, db, *args,**kwargs):
     
     else:
         return analysis.file_url
+
+async def get_volcano_meta_data(analysis_id, user, db, *args,**kwargs):
+    stmt = select(Analysis).where(
+        Analysis.id == analysis_id,
+        Analysis.user_id == user.id
+    )
+    result = await db.execute(stmt)
+    analysis = result.scalars().first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
+    
+    metadata = {
+        "pv_cutoff": analysis.pv_cutoff,
+        "ratio_or_log2":analysis.ratio_or_log2,
+        "ratio_up": analysis.ratio_up,
+        "ratio_down": analysis.ratio_down,
+        "log2_cut": analysis.log2_cut,
+        "control_name": analysis.control_name,
+        "pv_method": analysis.pv_method
+        }
+    
+    return analysis.file_url, analysis.index_col, analysis.column_data , metadata
+
+
+async def get_heatmap_data(data,user, db, *args,**kwargs):
+
+    stmt = select(Analysis).where(
+        Analysis.id == data.analysis_id,    
+        Analysis.user_id == user.id
+    )
+    result = await db.execute(stmt)
+    analysis = result.scalars().first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
+
+    metadata = {
+        # "pv_cutoff": analysis.pv_cutoff,
+        "ratio_or_log2":analysis.ratio_or_log2,
+        "ratio_up": analysis.ratio_up,
+        "ratio_down": analysis.ratio_down,
+        "log2_cut": analysis.log2_cut,
+        "control_name": analysis.control_name,
+        }
+    
+    return analysis.file_url, analysis.index_col, analysis.column_data , metadata
+
+
 
 async def get_normalized_data_bc(analysis_id, user, db, *args,**kwargs):
     stmt = select(Analysis).where(

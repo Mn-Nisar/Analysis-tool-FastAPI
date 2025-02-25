@@ -3,8 +3,9 @@ from app.services.data_processing.data_preprocess import get_data_frame
 from app.services.visualization.visualization import get_box_plot
 import numpy as np
 from combat.pycombat import pycombat
+from app.services.external_api.limma_api import batch_correct_limma
 
-def batch_correct(df, column_info):
+def batch_correct(df, column_info, method, analysis_id):
     sample_columns = []
     batch_labels = []
 
@@ -16,18 +17,23 @@ def batch_correct(df, column_info):
     
     df_subset = df[sample_columns].copy()
 
+
     unique_batches = {batch: i for i, batch in enumerate(set(batch_labels))}
     batch_numeric = np.array([unique_batches[batch] for batch in batch_labels])
-
-    data_corrected = pycombat(df_subset,batch_numeric)
-
+    if method == "combat":
+        data_corrected = pycombat(df_subset,batch_numeric)
+    else:
+        try:
+            data_corrected = batch_correct_limma(df_subset, batch_numeric,analysis_id )
+        except:
+            data_corrected = pycombat(df_subset,batch_numeric)
     return data_corrected
 
 
-def batch_correction_pipeline(file_url, index_col, batch_data, columns_data, analysis_id):
+def batch_correction_pipeline(file_url, index_col, batch_data, columns_data, analysis_id, method):
     df = get_data_frame(file_url, index_col=index_col)
     df.set_index(index_col, inplace=True)
-    df_cor = batch_correct(df, batch_data)
+    df_cor = batch_correct(df, batch_data, method, analysis_id)
 
     box_after_batch = get_box_plot(df_cor, title = "box plot [After Batch correction]",columns = columns_data, analysis_id = analysis_id)
 

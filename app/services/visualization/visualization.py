@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
+from  matplotlib.colors import LinearSegmentedColormap
 from matplotlib.lines import Line2D
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+from scipy.stats import zscore
 import pandas as pd
 import seaborn as sns
 import numpy as np
@@ -172,4 +175,186 @@ def result_bar_graph(df, analysis_id):
     plt.tight_layout()
 
     get_plot_url = get_s3_url("result_bar_plot",analysis_id)
+    return get_plot_url
+
+
+     
+def plot_volcano_diff(df,lfc, pv, lg2cut, pvalue_cut_off, genes, title, analysis_id):
+    
+    difex_ptn = dict()
+
+    pv_thr = -(np.log10(pvalue_cut_off))
+    lfc_thr = ( lg2cut,-lg2cut)
+
+    color=("red", "grey", "green","black")
+
+    df.loc[(df[lfc] >= lfc_thr[0]) & (df[pv] > pv_thr), 'color_add_axy'] = color[0]  # upregulated
+    df.loc[(df[lfc] <= lfc_thr[1]) & (df[pv] > pv_thr), 'color_add_axy'] = color[2]  # downregulated
+    df.loc[(df[lfc] > lfc_thr[1]) & (df[pv] > pv_thr) & (df[lfc] < lfc_thr[0]), 'color_add_axy'] = color[3]
+    df['color_add_axy'].fillna(color[1], inplace=True)  # intermediate
+
+    filt = df['color_add_axy'] == color[0]
+    to_lable_up =  df.loc[filt]
+    
+    to_lable_up.sort_values([lfc, pv], ascending=[False, False], inplace=True)
+    to_lable_up = to_lable_up.head(5)
+
+
+    filt1 = df['color_add_axy'] == color[2]
+    to_lable_down =  df.loc[filt1]
+    
+
+    to_lable_down.sort_values([lfc, pv], ascending=[True, False], inplace=True)
+    to_lable_down = to_lable_down.head(5)
+
+
+    difex_ptn['Upregulated'] = df.loc[df['color_add_axy'] == color[0], genes].tolist()
+    difex_ptn['Downregulated'] = df.loc[df['color_add_axy'] == color[2], genes].tolist()
+
+    df['color_add_axy'].replace('nan', np.nan, inplace=True)                       #edit
+    df['color_add_axy'].fillna('gray', inplace=True)                               #edit
+
+    plt.scatter(x = df[lfc], y = df[pv], s = 26 , c = df['color_add_axy'], alpha=0.8)
+
+    pv_max = df[pv].max()+1
+    pv_min = df[pv].min()
+    lfc_max = df[lfc].max()
+    
+    if lfc_max > 4:
+        lfc_max = lfc_max + 1
+    else:
+        lfc_max = 4
+    
+    try:
+        plt.xlim(-lfc_max,lfc_max)
+        plt.ylim(pv_min,pv_max)
+    
+    except:
+        plt.xlim(-4,4)
+                          
+    plt.axvline(x=lfc_thr[0], linestyle='--', color='#7d7d7d', linewidth=1,)
+    plt.axvline(x=lfc_thr[1], linestyle='--', color='#7d7d7d', linewidth=1)
+    plt.axhline(y=pv_thr, linestyle='--', color='#7d7d7d', linewidth=1)
+    plt.ylabel('-log10 (p-value)', fontsize = 8)
+    
+    plt.xlabel('log2 fold-change', fontsize = 8)
+
+    plt.title(title, fontsize = 10)
+
+
+    for index, row in to_lable_up.iterrows():
+        x = row[lfc]
+        y = row[pv]
+        gene_label = row[genes]
+
+        plt.annotate(gene_label , xy = (x,y), xycoords='data', size= 8,
+                                # xytext = (random.randint(0, 20),random.randint(0, 20)),
+                                xytext = (30,22),
+
+                                textcoords='offset pixels', ha='center', va='bottom',
+                                # bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.3),
+                                arrowprops=dict(arrowstyle='->',
+                                                color='grey'))
+
+
+    for index, row in to_lable_down.iterrows():
+        x = row[lfc]
+        y = row[pv]
+        gene_label = row[genes]
+
+        plt.annotate(gene_label , xy = (x,y), xycoords='data', size= 8,
+                                # xytext = (random.randint(0, 20),random.randint(0, 20)),
+                                xytext = (-30, 22),
+
+                                textcoords='offset pixels', ha='center', va='bottom',
+                                # bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.3),
+                                   arrowprops=dict(arrowstyle='->',
+                                                color='grey'))
+    
+
+    get_plot_url = get_s3_url(title,analysis_id)
+    
+    return get_plot_url, difex_ptn
+
+
+def scale_number(unscaled, to_min, to_max, from_min, from_max):
+    return (to_max-to_min)*(unscaled-from_min)/(from_max-from_min)+to_min
+
+def scale_list(l, to_min, to_max):
+    return [scale_number(i, to_min, to_max, min(l), max(l)) for i in l]
+
+
+def plot_heatmap(df,both,fc_left,fc_right,lg2cut , z_score, analysis_id):
+
+    if z_score:
+        df.fillna(0, inplace  = True)
+        df= zscore(df)
+        fc_left = -2
+        fc_right = 2
+        lg2cut = 2
+
+    cols = list()
+    for x in df.columns:
+        x = x.replace('LOG2 foldchange of','')
+        x = x.replace('FOLDCHANGE_','')
+        x = x.strip()
+        cols.append(x)
+
+    max_val = df.melt().value.max()
+    min_val = df.melt().value.min()
+
+    if both:
+        df.fillna(0, inplace = True)
+        cbar_kws={"ticks":[min_val,-lg2cut,lg2cut,max_val] }
+        v = scale_list([ min_val, (min_val+(-lg2cut))/2,-lg2cut,0, lg2cut ,(lg2cut+max_val)/2, max_val] , 0,1)
+        
+
+    else:
+        df.fillna(1, inplace = True)
+        cbar_kws={"ticks":[min_val, fc_left,fc_right, max_val] }
+        v = scale_list([ min_val, (min_val+(fc_left))/2,fc_left,1, fc_right ,(fc_right+max_val)/2, max_val] , 0,1)
+    
+    v = sorted(v)
+
+    c = ["darkgreen","green","palegreen","black","lightcoral","red","darkred"]
+    l = list(zip(v,c))
+
+    cmap = LinearSegmentedColormap.from_list('rg',l, N=256)
+
+    df.columns = cols
+    plt.switch_backend('AGG')
+    sns.set(font_scale=0.5)
+    try:
+        ax = sns.clustermap(df,yticklabels=True,cmap=cmap,cbar_kws=cbar_kws, ) 
+    except:
+        ax = sns.clustermap(df,yticklabels=True,) 
+
+               
+    plt.tight_layout()
+
+
+    get_plot_url = get_s3_url("Hierarchical cluster heatmap",analysis_id)
+    
+    return get_plot_url
+
+
+def plot_elbow_plot(df,key, analysis_id):
+    n_c = 15
+    df.set_index(key, inplace = True)
+    cols = list()
+   
+    if df.shape[0] <= 15:
+         n_c = df.shape[0]
+    wcss=[]
+    for i in range(1,n_c):
+        kmeans=KMeans(n_clusters=i,init="k-means++",random_state=42)
+        kmeans.fit(df)
+        wcss.append(kmeans.inertia_)
+    clusters=np.arange(1, n_c) 
+
+    plt.plot(clusters,wcss,marker ='x', markeredgecolor = 'blue')
+
+    plt.tight_layout()
+
+    get_plot_url = get_s3_url("Elbow plot",analysis_id)
     return get_plot_url

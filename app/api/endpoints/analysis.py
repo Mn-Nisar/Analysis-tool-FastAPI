@@ -7,14 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_async_session
 from app.services.data_processing.data_preprocess import (get_columns , 
                                                            get_file_url, get_norm_columns,
-                                                           get_lbl_free_file_url, get_normalized_data_bc)
+                                                           get_lbl_free_file_url, get_normalized_data_bc,
+                                                           get_volcano_meta_data, get_heatmap_data)
 from app.services.normalization.normalize_pipeline import  norm_pipeline
-from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree
+from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap
 from app.services.aws_s3.save_to_s3 import save_df, save_lable_free_df
 from app.services.differetial_exp.diff_pipeline import diff_pipeline
 from app.services.lable_free.lable_free_analysis import protien_identify
 from app.services.normalization.batch_correction import batch_correction_pipeline
-
+from app.services.differetial_exp.diiferential_plots import get_volcano_plot, get_heatmap_plot
 settings = Settings()
 
  
@@ -57,7 +58,7 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
 ):
     # try:
 
-    file_url = await get_file_url(data, user, db)
+    file_url = await get_file_url(data.analysis_id, user, db)
     
 
     normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , index_col, control_list, df_copy , dropped_df = norm_pipeline(data,file_url)
@@ -89,7 +90,7 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
 async def differentail_analysis(data: Differential,user: dict = Depends(auth.get_current_user),
                                  db: AsyncSession = Depends(get_async_session),):
     try:    
-        file_url, index_col, columns_data = await get_file_url(data, user, db, get_normalized=True)
+        file_url, index_col, columns_data = await get_file_url(data.analysis_id, user, db, get_normalized=True)
         
         columns = get_norm_columns(columns_data)
 
@@ -105,6 +106,7 @@ async def differentail_analysis(data: Differential,user: dict = Depends(auth.get
         
         analysis.pv_method = data.pv_method
         analysis.pv_cutoff = data.pv_cutoff
+        analysis.ratio_or_log2 = data.ratio_log2
         analysis.ratio_up = data.ratio_cut_up
         analysis.ratio_down = data.ratio_cut_down
         analysis.log2_cut =  data.log2_fc_cutoff
@@ -148,31 +150,37 @@ async def lable_free(data: LableFree, user: dict = Depends(auth.get_current_user
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/batch-correction")
-async def batch_correction(analysis_id: int ,user: dict = Depends(auth.get_current_user),
+async def batch_correction(data: BatchCorrection ,user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session),):
 
-    file_url, index_col,batch_data, columns_data = await get_normalized_data_bc(analysis_id, user, db)
+    file_url, index_col,batch_data, columns_data = await get_normalized_data_bc(data.analysis_id, user, db)
 
-    df_cor,box_after_batch = batch_correction_pipeline(file_url, index_col, batch_data, columns_data)
+    df_cor,box_after_batch = batch_correction_pipeline(file_url, index_col, batch_data, columns_data, data.analysis_id, data.bc_method)
 
-    q = await db.execute(select(Analysis).filter(Analysis.id == analysis_id))
+    q = await db.execute(select(Analysis).filter(Analysis.id == data.analysis_id))
     analysis = q.scalars().first()
     analysis.normalized_data = df_cor
     await db.commit()
-
-    return {"analysis_id":analysis_id,"box_after_batch":box_after_batch}
+    return {"analysis_id":data.analysis_id,"box_after_batch":box_after_batch}
 
 
 @router.post("/differential-volcano-plot")
 async def volcano_plot_api(analysis_id: int,user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session),):
     
+    file_url, index_col, columns_data , metadata = await get_volcano_meta_data(analysis_id, user, db)
+    
+    volcano_plots = get_volcano_plot(file_url, index_col, columns_data, metadata,analysis_id )
 
-    # file_url, index_col, columns_data = await get_file_url(data, user, db, get_normalized=True)
+    return {"volcano_plots":volcano_plots}
 
-    pass
 
-# @router.post("/differential-heatmap")
-# async def heatmap_api(analysis_id: int,user: dict = Depends(auth.get_current_user),     
+
+@router.post("/differential-heatmap")
+async def heatmap_api(data:HeatMap ,user: dict = Depends(auth.get_current_user),
+                                                     db: AsyncSession = Depends(get_async_session),):
+
+    file_url, index_col, columns_data , metadata = await get_heatmap_data(data, user, db)
+
+    heatmap_plot  = get_heatmap_plot(file_url, index_col, columns_data, metadata, data)

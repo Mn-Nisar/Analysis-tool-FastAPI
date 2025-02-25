@@ -29,7 +29,7 @@ class CreateUserRequest(BaseModel):
 
 class Token(BaseModel):
     access_token: str
-    Token_type: str
+    Token_type: str 
 
 class TokenRefreshRequest(BaseModel):
     refresh_token: str

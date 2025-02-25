@@ -32,6 +32,7 @@ class Analysis(Base):
     pv_method = Column(String(50), nullable=True)
     pv_cutoff = Column(Float, nullable=True)
     ratio_up = Column(Float, nullable=True)
+    ratio_or_log2 = Column(String(50), nullable=True)
     ratio_down = Column(Float, nullable=True)
     log2_cut = Column(Float, nullable=True)
     control_name = Column(String(255) , nullable=True)

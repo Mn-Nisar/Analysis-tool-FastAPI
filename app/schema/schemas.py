@@ -36,6 +36,13 @@ class Normalize(BaseModel):
     }
 
 
+
+
+class BatchCorrection(BaseModel):
+    analysis_id: int
+    bc_method: Literal["combat","limma"]
+
+
 class Differential(BaseModel):
     analysis_id: int
 
@@ -66,3 +73,10 @@ class LableFree(BaseModel):
     min_peptide: int = 6
     max_peptide: int = 22
     analysis_file: str
+
+class HeatMap(BaseModel):
+    analysis_id: int
+    method: Literal["heirarchial","k_mean"]
+    z_score: bool = False
+
+    
