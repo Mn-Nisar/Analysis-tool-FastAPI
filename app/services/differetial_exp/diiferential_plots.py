@@ -1,13 +1,8 @@
 from app.services.data_processing.data_preprocess import get_data_frame
-from app.services.visualization.visualization import plot_volcano_diff, plot_heatmap, plot_elbow_plot
-
-columns = { "test":{"127N Sample":["Abundance R1 127N Sample","Abundance R3 127N Sample","Abundance R2 127N Sample"],"127C Sample":["Abundance R1 127C Sample","Abundance R3 127C Sample","Abundance R2 127C Sample"],
-                        "128N Sample":["Abundance R1 128N Sample","Abundance R3 128N Sample","Abundance R2 128N Sample"],"128C Sample":["Abundance R1 128C Sample","Abundance R3 128C Sample","Abundance R2 128C Sample"],
-                        "129N Sample":["Abundance R1 129N Sample","Abundance R3 129N Sample","Abundance R2 129N Sample"],"129C Sample":["Abundance R1 129C Sample","Abundance R3 129C Sample","Abundance R2 129C Sample"],
-                        "130N Sample":["Abundance R1 130N Sample","Abundance R3 130N Sample","Abundance R2 130N Sample"],"130C Sample":["Abundance R1 130C Sample","Abundance R3 130C Sample","Abundance R2 130C Sample"]}
-                        ,
-                "control":{"126 control":["Abundance R1 126 control","Abundance R2 126 control","Abundance R3 126 control"]}
-                }
+from app.services.visualization.visualization import (plot_volcano_diff, plot_heatmap,
+                                                       plot_elbow_plot, plot_kmeans_plot,
+                                                       get_circbar_plot)
+from app.services.external_api.gprofiler_api import get_gene_ontology
 
 def get_columns(col, metadata):
     pv_methods = {
@@ -49,3 +44,22 @@ def get_heatmap_plot(file_url, index_col, columns_data, metadata, data):
         plot  = plot_elbow_plot(df,index_col,data.analysis_id )
 
     return plot
+
+
+def get_kmean_plot(file_url, index_col, columns_data, metadata, data):
+    df = get_data_frame(file_url, index_col=index_col)
+    both = True if metadata["ratio_or_log2"] == "log2_fc" else False
+    
+    fc_left = metadata["ratio_down"]
+    fc_right = metadata["ratio_up"]
+    lg2cut = metadata["log2_cut"]
+
+    plot = plot_kmeans_plot(df,index_col, data.k_value ,fc_left,fc_right,lg2cut,both, data.analysis_id)
+
+    return plot
+
+def go_analysis(genes, p_value, species, analysis_id):
+    go = get_gene_ontology(genes, p_value, species)
+    circbar = get_circbar_plot(go, analysis_id)
+
+    return circbar, go      

@@ -8,14 +8,15 @@ from app.core.database import get_async_session
 from app.services.data_processing.data_preprocess import (get_columns , 
                                                            get_file_url, get_norm_columns,
                                                            get_lbl_free_file_url, get_normalized_data_bc,
-                                                           get_volcano_meta_data, get_heatmap_data)
+                                                           get_volcano_meta_data, get_heatmap_data, get_go_data)
 from app.services.normalization.normalize_pipeline import  norm_pipeline
-from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap
+from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap, GeneOntology
 from app.services.aws_s3.save_to_s3 import save_df, save_lable_free_df
 from app.services.differetial_exp.diff_pipeline import diff_pipeline
 from app.services.lable_free.lable_free_analysis import protien_identify
 from app.services.normalization.batch_correction import batch_correction_pipeline
-from app.services.differetial_exp.diiferential_plots import get_volcano_plot, get_heatmap_plot
+from app.services.differetial_exp.diiferential_plots import get_volcano_plot, get_heatmap_plot, get_kmean_plot
+from app.services.differetial_exp.diiferential_plots import go_analysis
 settings = Settings()
 
  
@@ -184,3 +185,31 @@ async def heatmap_api(data:HeatMap ,user: dict = Depends(auth.get_current_user),
     file_url, index_col, columns_data , metadata = await get_heatmap_data(data, user, db)
 
     heatmap_plot  = get_heatmap_plot(file_url, index_col, columns_data, metadata, data)
+
+    return {"heatmap_plot":heatmap_plot}
+
+@router.post("/differential-kmeans")   
+async def kmeans_api(data:HeatMap ,user: dict = Depends(auth.get_current_user),
+                                                     db: AsyncSession = Depends(get_async_session),):
+    
+    file_url, index_col, columns_data , metadata = await get_heatmap_data(data, user, db)
+
+    kmean_plot  = get_kmean_plot(file_url, index_col, columns_data, metadata, data)
+    
+    return {"kmean_plot":kmean_plot}
+
+@router.post("/gene-ontology")   
+async def gene_ontology(data:GeneOntology, user: dict = Depends(auth.get_current_user),
+                                                     db: AsyncSession = Depends(get_async_session),):
+    # all species can be found here 
+    # https://biit.cs.ut.ee/gprofiler/api/util/organisms_list/
+    genes = await get_go_data(data.analysis_id, user, db)
+
+    plot, data = go_analysis(genes, data.p_value, data.species,data.analysis_id )
+
+    return {"plot":plot,"data":data}
+
+@router.post("/kegg-pathway")   
+async def kegg_pathway(analysis_id: int,pathway:str, user: dict = Depends(auth.get_current_user),
+                             db: AsyncSession = Depends(get_async_session)):
+    pass

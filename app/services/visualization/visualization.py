@@ -11,6 +11,8 @@ from io import BytesIO
 from app.services.aws_s3.save_to_s3 import save_to_s3 
 from app.config import Settings
 import os
+import matplotlib
+from itertools import  groupby
 
 settings = Settings()
 PRODUCTION = settings.is_production
@@ -358,3 +360,215 @@ def plot_elbow_plot(df,key, analysis_id):
 
     get_plot_url = get_s3_url("Elbow plot",analysis_id)
     return get_plot_url
+
+def get_auto_figsize(df_shape):
+    if df_shape[0] < 50:
+        return (df_shape[1], int(df_shape[0]/5)+2)
+    else:          
+        return (df_shape[1], int(df_shape[0]/10)+1)
+
+
+def plot_kmeans_plot(df,key,n_clusters,fc_left,fc_right,lg2cut,both, analysis_id):
+    auto_fig_size = get_auto_figsize(df.shape)
+    
+    max_val = df.melt().value.max()
+    min_val = df.melt().value.min()
+
+    if both:
+        df.fillna(0, inplace = True)
+        cbar_kws={"ticks":[min_val,-lg2cut,lg2cut,max_val] , "orientation": "horizontal"}
+        v = scale_list([ min_val, (min_val+(-lg2cut))/2,-lg2cut,0, lg2cut ,(lg2cut+max_val)/2, max_val] , 0,1)
+
+    else:
+        df.fillna(1, inplace = True)
+        cbar_kws={"ticks":[min_val, fc_left,fc_right, max_val], "orientation": "horizontal" }
+        v = scale_list([ min_val, (min_val+(fc_left))/2,fc_left,1, fc_right ,(fc_right+max_val)/2, max_val] , 0,1)
+
+    c = ["darkgreen","green","palegreen","black","lightcoral","red","darkred"]
+    l = list(zip(v,c))
+
+    cmap = LinearSegmentedColormap.from_list('rg',l, N=256)
+
+    kmeans=KMeans(n_clusters=n_clusters,max_iter=1000,random_state=42)
+    kmeans.fit(df)
+
+    df['clusters']=kmeans.labels_
+
+    df=df.sort_values('clusters')
+
+    data=df.loc[:, df.columns != 'clusters']
+    
+    sns.set(font_scale=0.5)
+
+    fig, axes = plt.subplots(figsize=(auto_fig_size))
+
+    ax = sns.heatmap(data,yticklabels=True,cmap=cmap,cbar_kws=cbar_kws)
+
+    clusters=list(df['clusters'])
+
+    hline_list=[0]
+    points=0
+    for i in range(0,n_clusters):
+        counts=clusters.count(i)
+        points=points+counts
+        hline_list.append(points)
+
+    cmap= matplotlib.cm.viridis
+    bounds = hline_list
+    bounds=list(reversed(bounds))
+    norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
+    ax1=fig.colorbar(
+        matplotlib.cm.ScalarMappable(cmap=cmap, norm=norm),
+        ax=ax,  # Specify the axes to use for the colorbar
+        ticks=bounds,
+        spacing='proportional',
+        orientation='vertical',
+        #label='Discrete intervals, some other units',
+        )
+
+    get_plot_url = get_s3_url("K means plot",analysis_id)
+
+    matplotlib.rc_file_defaults()
+
+    return kmap , df
+
+
+
+
+
+#all code below are for circular bargraph
+#---------------------------------------------------------------------
+def getgroupsize(golist):
+    sep_go = [list(grp) for k, grp in groupby(golist)]
+    counts = [len(x) for x in sep_go]
+    return counts
+
+def getfunctions(golist):
+    sep_go = [list(grp) for k, grp in groupby(golist)]
+    functions = [x[0] for x in sep_go]
+    return functions
+# The following is a helper function that given the angle at which the bar is positioned and the
+# offset used in the barchart, determines the rotation and alignment of the labels.
+
+def get_label_rotation(angle, offset):
+    # Rotation must be specified in degrees :(
+    rotation = np.rad2deg(angle + offset)
+    if angle <= np.pi:
+        alignment = "right"
+        rotation = rotation + 180
+    else:
+        alignment = "left"
+    return rotation, alignment
+
+
+def add_labels(angles, values, labels, offset, ax):
+    # This is the space between the end of the bar and the label
+    padding = 4
+
+    # Iterate over angles, values, and labels, to add all of them.
+    for angle, value, label, in zip(angles, values, labels):
+        angle = angle
+
+        # Obtain text rotation and alignment
+        rotation, alignment = get_label_rotation(angle, offset)
+
+        # And finally add the text
+        ax.text(
+            x=angle,
+            y=value + padding,
+            s=label,
+            ha=alignment,
+            va="center",
+            rotation=rotation,
+            rotation_mode="anchor",
+            size = 8
+        )
+
+def get_circbar_plot(df, analysis_id):
+
+    plt.switch_backend('AGG')
+    df["strvalue"] = df["value"].astype(str)
+    df["strvalue"] = df["strvalue"].apply(lambda x: '('+x+')')
+    df["name"]  = df[['strvalue', 'name']].agg('-'.join, axis=1)
+
+
+    OFFSET = np.pi / 2
+
+    VALUES = np.log2(df["value"].values)
+    LABELS = df["name"].values
+    GROUP = df["group"].values
+
+    PAD = 3
+    ANGLES_N = len(VALUES) + PAD * len(np.unique(GROUP))
+    ANGLES = np.linspace(0, 2 * np.pi, num=ANGLES_N, endpoint=False)
+    WIDTH = (2 * np.pi) / len(ANGLES)
+
+    offset = 0
+    IDXS = []
+
+    GROUPS_SIZE = getgroupsize(df['group'].tolist())
+
+    for size in GROUPS_SIZE:
+        IDXS += list(range(offset + PAD, offset + size + PAD))
+        offset += size + PAD
+
+
+
+    fig, ax = plt.subplots(figsize=(20, 10), subplot_kw={"projection": "polar"})
+    # fig, ax = plt.subplots(subplot_kw={"projection": "polar"})
+
+    ax.set_ylim(-100, max(VALUES))
+    ax.set_theta_offset(OFFSET)
+    ax.set_frame_on(False)
+    ax.xaxis.grid(False)
+    ax.yaxis.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    GROUPS_SIZE = getgroupsize(df['group'].tolist())
+
+    COLORS = [f"C{i}" for i, size in enumerate(GROUPS_SIZE) for _ in range(size)]
+
+    ax.bar(
+        ANGLES[IDXS], VALUES, width=WIDTH, color=COLORS,
+        edgecolor="white", linewidth=2
+    )
+
+    add_labels(ANGLES[IDXS], VALUES, LABELS, OFFSET, ax)
+
+    # Extra customization below here --------------------
+
+    # This iterates over the sizes of the groups adding reference
+    # lines and annotations.
+# Set the coordinates limits
+
+
+    offset = 0
+    funcs = getfunctions(df['group'].tolist())
+
+    for group, size in zip(funcs, GROUPS_SIZE):
+        # Add line below bars
+        x1 = np.linspace(ANGLES[offset + PAD], ANGLES[offset + size + PAD - 1], num=50)
+        ax.plot(x1, [-5] * 50, color="#333333")
+
+        # Add text to indicate group
+        ax.text(
+            np.mean(x1), -20, group, color="#333333", fontsize=8,
+            fontweight="bold", ha="center", va="center"
+        )
+
+        # Add reference lines at 20, 40, 60, and 80
+        x2 = np.linspace(ANGLES[offset], ANGLES[offset + PAD - 1], num=50)
+        ax.plot(x2, [20] * 50, color="#bebebe", lw=0.8)
+        ax.plot(x2, [40] * 50, color="#bebebe", lw=0.8)
+        ax.plot(x2, [60] * 50, color="#bebebe", lw=0.8)
+        ax.plot(x2, [80] * 50, color="#bebebe", lw=0.8)
+
+        offset += size + PAD
+
+    plt.tight_layout()
+
+    get_plot_url = get_s3_url("Circular bar plot",analysis_id)
+    return get_plot_url
+
+#------------------------------------------------ cirbar done

@@ -29,3 +29,18 @@ def convert_acc_to_gene(accessions, organism='hsapiens'):
         gs_convert_success = False
 
     return con_df , gs_convert_success
+
+
+def get_gene_ontology(genes, p_value, species):
+    gp = GProfiler(return_dataframe=True)
+    go = gp.profile(organism=species,
+                    query=genes,
+                    no_evidences=False,
+                    user_threshold=p_value,
+                    max_p_value=0.05,
+                    )
+    go = go[['native','name','p_value','intersection_size','source']]
+    go.sort_values(by=['source'], inplace=True)
+    go.rename(columns = {"intersection_size": "value","source":"group"},inplace = True)
+
+    return go

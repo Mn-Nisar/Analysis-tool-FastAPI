@@ -79,4 +79,16 @@ class HeatMap(BaseModel):
     method: Literal["heirarchial","k_mean"]
     z_score: bool = False
 
-    
+class Kmean(BaseModel):
+    analysis_id: int
+    k_value: int
+
+class GeneOntology(BaseModel):
+    analysis_id: int
+    p_value: float = 0.05
+    species: str = "hsapiens"
+
+class KeggPathway(BaseModel):
+    analysis_id: int
+    p_value: float = 0.05
+    species: str = "hsapiens"
