@@ -164,7 +164,8 @@ def find_index(df,accession_column,gene_column, convert_protein_to_gene):
     return df, final_key
 
 def get_normalized_columns(columns):
-    return [c for c in columns if "normalized_" in c ]
+    
+    return ["normalized_"+item for category in columns.values() for sublist in category.values() for item in sublist]
 
 def get_norm_columns(columns_data):
     for category, samples in columns_data.items():

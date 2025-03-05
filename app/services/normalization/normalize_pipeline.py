@@ -26,7 +26,7 @@ def norm_pipeline(data,file_url):
 
     df = normalize_data(df, data.norm_method, data.tmm_propotion )
 
-    norm_columns = get_normalized_columns(df.columns)
+    norm_columns = get_normalized_columns(data.column_data)
     
     normalized_data = save_df(df, name=f"{data.analysis_id}_normalized_data", file_format = "csv")
     
@@ -36,7 +36,7 @@ def norm_pipeline(data,file_url):
 
     box_before_norm = get_box_plot(df[before_norm_columns], title = "box plot [Before normalization]",analysis_id=data.analysis_id,columns = data.column_data)
 
-    box_after_norm = get_box_plot(df[norm_columns], title = "box plot [After normalization]",analysis_id=data.analysis_id,columns = data.column_data)
+    box_after_norm = get_box_plot(df[norm_columns], title = "box plot [After normalization]",analysis_id=data.analysis_id,columns = data.column_data, normalized = True)
 
     control_list = get_control_list(data.column_data)
 

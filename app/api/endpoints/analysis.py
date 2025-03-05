@@ -88,6 +88,7 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
             "box_before":box_before_norm,
             "box_after":box_after_norm,
             "control_list":control_list,
+            "exp_type":data.exp_type
                         }
    
 
