@@ -26,10 +26,9 @@ def norm_pipeline(data,file_url):
 
     df = normalize_data(df, data.norm_method, data.tmm_propotion )
 
-    
     norm_columns = get_normalized_columns(df.columns)
     
-    normalized_data = save_df(df[norm_columns], name=f"{data.analysis_id}_normalized_data", file_format = "csv")
+    normalized_data = save_df(df, name=f"{data.analysis_id}_normalized_data", file_format = "csv")
     
     pca_before_nrom = get_pca_plot(df[before_norm_columns], title = "PCA plot [Before normalization]",columns = data.column_data, analysis_id=data.analysis_id )
 
@@ -42,4 +41,5 @@ def norm_pipeline(data,file_url):
     control_list = get_control_list(data.column_data)
 
     return normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm ,index_col,control_list, df_copy , dropped_df
- 
+
+

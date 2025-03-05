@@ -8,7 +8,7 @@ from app.core.database import get_async_session
 from app.services.data_processing.data_preprocess import (get_columns , 
                                                            get_file_url, get_norm_columns,
                                                            get_lbl_free_file_url, get_normalized_data_bc,
-                                                           get_volcano_meta_data, get_heatmap_data, get_go_data)
+                                                           get_volcano_meta_data, get_heatmap_data, get_go_data,get_batch_data)
 from app.services.normalization.normalize_pipeline import  norm_pipeline
 from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap, GeneOntology
 from app.services.aws_s3.save_to_s3 import save_df, save_lable_free_df
@@ -52,7 +52,6 @@ async def save_metadata(
 # except Exception as e:
 #     raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/normalization")
 async def data_normalization(data: Normalize,user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session),
@@ -60,7 +59,10 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
     # try:
 
     file_url = await get_file_url(data.analysis_id, user, db)
-    
+
+    batch_data = None
+    if data.exp_type == "biorep":
+        batch_data = get_batch_data(data.column_data, data.column_names)
 
     normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , index_col, control_list, df_copy , dropped_df = norm_pipeline(data,file_url)
 
@@ -70,11 +72,13 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
     analysis = result.scalars().first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis record not found")
-    
+
+    if data.exp_type == "biorep":
+        analysis.batch_data = batch_data
+
     analysis.normalized_data = normalized_data
     analysis.index_col = index_col
     analysis.column_data = data.column_data
-    analysis.batch_data = data.batch_data
     await db.commit()
     
     return {"analysis_id":data.analysis_id,
@@ -85,7 +89,7 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
             "box_after":box_after_norm,
             "control_list":control_list,
                         }
-
+   
 
 @router.post("/differential-expression-analysis")
 async def differentail_analysis(data: Differential,user: dict = Depends(auth.get_current_user),
@@ -212,4 +216,4 @@ async def gene_ontology(data:GeneOntology, user: dict = Depends(auth.get_current
 @router.post("/kegg-pathway")   
 async def kegg_pathway(analysis_id: int,pathway:str, user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session)):
-    pass
+    file_url, index_col, columns_data , metadata = await get_volcano_meta_data(analysis_id, user, db)

@@ -18,25 +18,9 @@ class Normalize(BaseModel):
     accession_column: Optional[str] = None
     gene_column: Optional[str] = None
     convert_protein_to_gene: bool = False
-    column_data: Dict[str, Any] = { "test":{"127N Sample":["Abundance R1 127N Sample","Abundance R3 127N Sample","Abundance R2 127N Sample"],"127C Sample":["Abundance R1 127C Sample","Abundance R3 127C Sample","Abundance R2 127C Sample"],
-                        "128N Sample":["Abundance R1 128N Sample","Abundance R3 128N Sample","Abundance R2 128N Sample"],"128C Sample":["Abundance R1 128C Sample","Abundance R3 128C Sample","Abundance R2 128C Sample"],
-                        "129N Sample":["Abundance R1 129N Sample","Abundance R3 129N Sample","Abundance R2 129N Sample"],"129C Sample":["Abundance R1 129C Sample","Abundance R3 129C Sample","Abundance R2 129C Sample"],
-                        "130N Sample":["Abundance R1 130N Sample","Abundance R3 130N Sample","Abundance R2 130N Sample"],"130C Sample":["Abundance R1 130C Sample","Abundance R3 130C Sample","Abundance R2 130C Sample"]}
-                        ,
-                "control":{"126 control":["Abundance R1 126 control","Abundance R2 126 control","Abundance R3 126 control"]}
-                }
+    column_data: Dict[str, Any] = { }
     tmm_propotion: int = 10
-    
-    batch_data: Optional[Dict[str, Any]] = { "batch1":{"test":["Abundance R1 127N Sample","Abundance R1 127C Sample","Abundance R1 128N Sample","Abundance R1 128C Sample","Abundance R1 129N Sample","Abundance R1 129C Sample","Abundance R1 130N Sample","Abundance R1 130C Sample"],
-                    "control":["Abundance R1 126 control"]},
-        "batch2":{"test":["Abundance R2 127N Sample","Abundance R2 127C Sample","Abundance R2 128N Sample","Abundance R2 128C Sample","Abundance R2 129N Sample","Abundance R2 129C Sample","Abundance R2 130N Sample","Abundance R2 130C Sample"],
-                    "control":["Abundance R2 126 control"]},
-        "batch3":{"test":["Abundance R3 127N Sample","Abundance R3 127C Sample","Abundance R3 128N Sample","Abundance R3 128C Sample","Abundance R3 129N Sample","Abundance R3 129C Sample","Abundance R3 130N Sample","Abundance R3 130C Sample"],
-                    "control":["Abundance R3 126 control"]},
-    }
-
-
-
+    column_names:Dict[str, Any] = None
 
 class BatchCorrection(BaseModel):
     analysis_id: int

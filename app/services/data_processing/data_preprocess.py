@@ -180,3 +180,19 @@ def get_lbl_free_file_url(data):
     df = pd.read_csv(data.analysis_file)
     fasta_url = data.fasta_url
     return df, fasta_url
+
+def get_batch_data(data, column_names):
+
+    transformed_data = {"test": {}, "control": {}}
+
+    sample_values = list(data["test"].values())
+    grouped_samples = list(map(list, zip(*sample_values))) if sample_values else []
+
+    control_values = list(data["control"].values())
+    grouped_control = list(map(list, zip(*control_values))) if control_values else []
+
+    transformed_data["test"] = dict(zip(column_names["test"], grouped_samples))
+    transformed_data["control"] = dict(zip(column_names["control"], grouped_control))
+
+    return transformed_data
+
