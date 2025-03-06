@@ -8,7 +8,8 @@ from app.core.database import get_async_session
 from app.services.data_processing.data_preprocess import (get_columns , 
                                                            get_file_url, get_norm_columns,
                                                            get_lbl_free_file_url, get_normalized_data_bc,
-                                                           get_volcano_meta_data, get_heatmap_data, get_go_data,get_batch_data)
+                                                           get_volcano_meta_data, get_heatmap_data, get_go_data,get_batch_data, get_data_frame,
+                                                           find_index, column_dict_to_list)
 from app.services.normalization.normalize_pipeline import  norm_pipeline
 from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap, GeneOntology
 from app.services.aws_s3.save_to_s3 import save_df, save_lable_free_df
@@ -62,34 +63,54 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
 
     batch_data = None
     if data.exp_type == "biorep":
-        batch_data = get_batch_data(data.column_data, data.column_names)
+        batch_data = data.column_data
+        data.column_data = get_batch_data(batch_data, data.column_names)
 
-    normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , index_col, control_list, df_copy , dropped_df = norm_pipeline(data,file_url)
+
+    df = get_data_frame(file_url)
+    
+    df, index_col  = find_index(df,data.accession_column,data.gene_column, data.convert_protein_to_gene)
+    
+    cols_to_analyze = column_dict_to_list(data.column_data)
+
+    df_copy = df.drop(columns=cols_to_analyze).copy()
+
+    df_to_alyz = df[cols_to_analyze]
+    
+    normalized_data,pca_before_nrom,pca_after_norm,box_before_norm,box_after_norm , index_col, control_list ,dropped_df = norm_pipeline(df_to_alyz, data, index_col)
 
     # create a model to save all the files for an analysis id and save it for zipping
     
     result = await db.execute(select(Analysis).filter(Analysis.id == data.analysis_id))
     analysis = result.scalars().first()
+    
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis record not found")
 
     if data.exp_type == "biorep":
         analysis.batch_data = batch_data
 
-    analysis.normalized_data = normalized_data
+    if not df_copy.empty:
+        normalized_data = normalized_data.merge(df_copy, left_index=True, right_index=True, how="inner")
+
+    normalized_data_url = save_df(normalized_data, name=f"{data.analysis_id}_normalized_data", file_format = "csv")
+
+    analysis.normalized_data = normalized_data_url
     analysis.index_col = index_col
     analysis.column_data = data.column_data
-    await db.commit()
+
+    await db.commit() 
     
     return {"analysis_id":data.analysis_id,
-            "normalized_data":normalized_data,
+            "normalized_data":normalized_data_url,
             "pca_before":pca_before_nrom,
             "pca_after":pca_after_norm,
             "box_before":box_before_norm,
             "box_after":box_after_norm,
             "control_list":control_list,
-            "exp_type":data.exp_type
-                        }
+            "exp_type":data.exp_type,
+            "dropped_df": dropped_df
+                    }
    
 
 @router.post("/differential-expression-analysis")
@@ -161,13 +182,15 @@ async def batch_correction(data: BatchCorrection ,user: dict = Depends(auth.get_
                              db: AsyncSession = Depends(get_async_session),):
 
     file_url, index_col,batch_data, columns_data = await get_normalized_data_bc(data.analysis_id, user, db)
-
-    df_cor,box_after_batch = batch_correction_pipeline(file_url, index_col, batch_data, columns_data, data.analysis_id, data.bc_method)
+    main_df,box_after_batch = batch_correction_pipeline(file_url, index_col, batch_data, columns_data, data.analysis_id, data.bc_method)
+    
+    normalized_data_url = save_df(main_df, name=f"{data.analysis_id}_normalized_batch_corr_data", file_format = "csv")
 
     q = await db.execute(select(Analysis).filter(Analysis.id == data.analysis_id))
     analysis = q.scalars().first()
-    analysis.normalized_data = df_cor
+    analysis.normalized_data = normalized_data_url
     await db.commit()
+    print("box_after_batchbox_after_batchbox_after_batchbox_after_batchbox_after_batch",box_after_batch)
     return {"analysis_id":data.analysis_id,"box_after_batch":box_after_batch}
 
 

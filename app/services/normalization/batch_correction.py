@@ -10,31 +10,30 @@ def batch_correct(df, column_info, method, analysis_id):
     batch_labels = []
 
     for batch, groups in column_info.items():
-        for col_type in ["test", "control"]:
-            for col in groups[col_type]:
-                sample_columns.append(f"normalized_{col}")
-                batch_labels.append(batch)  
-    
+        for i, (col, sub_cols) in enumerate(groups.items(), start=1): 
+            for sub_col in sub_cols:
+                sample_columns.append(f"normalized_{sub_col}")
+                batch_labels.append(i) 
+
     df_subset = df[sample_columns].copy()
-
-
-    unique_batches = {batch: i for i, batch in enumerate(set(batch_labels))}
-    batch_numeric = np.array([unique_batches[batch] for batch in batch_labels])
+    
     if method == "combat":
-        data_corrected = pycombat(df_subset,batch_numeric)
+        data_corrected = pycombat(df_subset,batch_labels)
     else:
         try:
-            data_corrected = batch_correct_limma(df_subset, batch_numeric,analysis_id )
+            data_corrected = batch_correct_limma(df_subset, batch_labels,analysis_id )
         except:
-            data_corrected = pycombat(df_subset,batch_numeric)
+            data_corrected = pycombat(df_subset,batch_labels)
     return data_corrected
 
 
 def batch_correction_pipeline(file_url, index_col, batch_data, columns_data, analysis_id, method):
     df = get_data_frame(file_url, index_col=index_col)
-    df.set_index(index_col, inplace=True)
-    df_cor = batch_correct(df, batch_data, method, analysis_id)
+
+    df_cor  = batch_correct(df, batch_data, method, analysis_id)
+
+    df.update(df_cor)
 
     box_after_batch = get_box_plot(df_cor, title = "box plot [After Batch correction]",columns = columns_data, analysis_id = analysis_id)
 
-    return df_cor,box_after_batch
+    return df,box_after_batch

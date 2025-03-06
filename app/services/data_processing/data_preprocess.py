@@ -131,19 +131,26 @@ def get_data_frame(url,*args,**kwargs):
             df = pd.read_csv(url)
         return df
 
-def modify_duplicates(val):
-    occurrences = {}
-
-    if val in occurrences:
-        occurrences[val] += 1
-        return val + " " * occurrences[val]  # Add spaces
-    else:
-        occurrences[val] = 0
-        return val
+def set_unique_index(df, index_col):
+    index_counts = {}
+    unique_index = []
     
+    for value in df[index_col]:
+        if value in index_counts:
+            index_counts[value] += 1
+            unique_index.append(value + " " * index_counts[value])
+        else:
+            index_counts[value] = 0
+            unique_index.append(value)
+    
+    df[index_col] = unique_index
+    df.set_index(index_col, inplace=True)
+    return df
+
 def find_index(df,accession_column,gene_column, convert_protein_to_gene):
     final_key = accession_column
     if (gene_column == None or convert_protein_to_gene) and accession_column:
+
         con_df , gs_convert_success = gprofiler_api.convert_acc_to_gene(df[accession_column].tolist())
 
         if gs_convert_success:
@@ -159,7 +166,7 @@ def find_index(df,accession_column,gene_column, convert_protein_to_gene):
 
     df = df.loc[df[final_key] != 'sp'] 
 
-    df[final_key] = df[final_key].apply(modify_duplicates)
+    df = set_unique_index(df, final_key)
 
     return df, final_key
 
@@ -177,12 +184,15 @@ def get_norm_columns(columns_data):
 def get_control_list(columns_data):
     return list(columns_data["control"].keys())
 
-def get_lbl_free_file_url(data):
+async def get_lbl_free_file_url(data):
     df = pd.read_csv(data.analysis_file)
     fasta_url = data.fasta_url
     return df, fasta_url
 
 def get_batch_data(data, column_names):
+
+    print(data)
+    # {'control': {'c1': ['Abundance R1 126 control'], 'control 2': ['Abundance R2 126 control'], 'control 3': ['Abundance R3 126 control']}, 'test': {'test 1': ['Abundance R1 127C Sample', 'Abundance R1 127N Sample', 'Abundance R1 128C Sample', 'Abundance R1 128N Sample'], 'test 2': ['Abundance R2 127C Sample', 'Abundance R2 127N Sample', 'Abundance R2 128C Sample', 'Abundance R2 128N Sample'], 'test 3': ['Abundance R3 127C Sample', 'Abundance R3 127N Sample', 'Abundance R3 128C Sample', 'Abundance R3 128N Sample']}}
 
     transformed_data = {"test": {}, "control": {}}
 
@@ -194,6 +204,10 @@ def get_batch_data(data, column_names):
 
     transformed_data["test"] = dict(zip(column_names["test"], grouped_samples))
     transformed_data["control"] = dict(zip(column_names["control"], grouped_control))
+
+    print(transformed_data)
+    # {'test': {'s1': ['Abundance R1 127C Sample', 'Abundance R2 127C Sample', 'Abundance R3 127C Sample'], 's2': ['Abundance R1 127N Sample', 'Abundance R2 127N Sample', 'Abundance R3 127N Sample'], 's3': ['Abundance R1 128C Sample', 'Abundance R2 128C Sample', 'Abundance R3 128C Sample'], 's4': ['Abundance R1 128N Sample', 'Abundance R2 128N Sample', 'Abundance R3 128N Sample']}, 'control': {'c1': ['Abundance R1 126 control', 'Abundance R2 126 control', 'Abundance R3 126 control']}}
+
 
     return transformed_data
 
