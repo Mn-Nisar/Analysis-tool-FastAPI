@@ -100,7 +100,7 @@ async def get_normalized_data_bc(analysis_id, user, db, *args,**kwargs):
     analysis = result.scalars().first()
     if not analysis:    
         raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
-    return analysis.normalized_data, analysis.index_col, analysis.batch_data, analysis.column_data
+    return analysis.normalized_data, analysis.index_col, analysis.column_data
 
 async def get_go_data(analysis_id, user, db, *args,**kwargs):
     stmt = select(Analysis).where(
@@ -191,9 +191,6 @@ async def get_lbl_free_file_url(data):
 
 def get_batch_data(data, column_names):
 
-    print(data)
-    # {'control': {'c1': ['Abundance R1 126 control'], 'control 2': ['Abundance R2 126 control'], 'control 3': ['Abundance R3 126 control']}, 'test': {'test 1': ['Abundance R1 127C Sample', 'Abundance R1 127N Sample', 'Abundance R1 128C Sample', 'Abundance R1 128N Sample'], 'test 2': ['Abundance R2 127C Sample', 'Abundance R2 127N Sample', 'Abundance R2 128C Sample', 'Abundance R2 128N Sample'], 'test 3': ['Abundance R3 127C Sample', 'Abundance R3 127N Sample', 'Abundance R3 128C Sample', 'Abundance R3 128N Sample']}}
-
     transformed_data = {"test": {}, "control": {}}
 
     sample_values = list(data["test"].values())
@@ -207,7 +204,6 @@ def get_batch_data(data, column_names):
 
     print(transformed_data)
     # {'test': {'s1': ['Abundance R1 127C Sample', 'Abundance R2 127C Sample', 'Abundance R3 127C Sample'], 's2': ['Abundance R1 127N Sample', 'Abundance R2 127N Sample', 'Abundance R3 127N Sample'], 's3': ['Abundance R1 128C Sample', 'Abundance R2 128C Sample', 'Abundance R3 128C Sample'], 's4': ['Abundance R1 128N Sample', 'Abundance R2 128N Sample', 'Abundance R3 128N Sample']}, 'control': {'c1': ['Abundance R1 126 control', 'Abundance R2 126 control', 'Abundance R3 126 control']}}
-
 
     return transformed_data
 

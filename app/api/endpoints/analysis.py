@@ -8,7 +8,7 @@ from app.core.database import get_async_session
 from app.services.data_processing.data_preprocess import (get_columns , 
                                                            get_file_url, get_norm_columns,
                                                            get_lbl_free_file_url, get_normalized_data_bc,
-                                                           get_volcano_meta_data, get_heatmap_data, get_go_data,get_batch_data, get_data_frame,
+                                                           get_volcano_meta_data, get_heatmap_data, get_go_data, get_data_frame,
                                                            find_index, column_dict_to_list)
 from app.services.normalization.normalize_pipeline import  norm_pipeline
 from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap, GeneOntology
@@ -61,12 +61,6 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
 
     file_url = await get_file_url(data.analysis_id, user, db)
 
-    batch_data = None
-    if data.exp_type == "biorep":
-        batch_data = data.column_data
-        data.column_data = get_batch_data(batch_data, data.column_names)
-
-
     df = get_data_frame(file_url)
     
     df, index_col  = find_index(df,data.accession_column,data.gene_column, data.convert_protein_to_gene)
@@ -87,9 +81,6 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis record not found")
 
-    if data.exp_type == "biorep":
-        analysis.batch_data = batch_data
-
     if not df_copy.empty:
         normalized_data = normalized_data.merge(df_copy, left_index=True, right_index=True, how="inner")
 
@@ -109,6 +100,7 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
             "box_after":box_after_norm,
             "control_list":control_list,
             "exp_type":data.exp_type,
+            "column_data": data.column_data,
             "dropped_df": dropped_df
                     }
    
@@ -181,8 +173,9 @@ async def lable_free(data: LableFree, user: dict = Depends(auth.get_current_user
 async def batch_correction(data: BatchCorrection ,user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session),):
 
-    file_url, index_col,batch_data, columns_data = await get_normalized_data_bc(data.analysis_id, user, db)
-    main_df,box_after_batch = batch_correction_pipeline(file_url, index_col, batch_data, columns_data, data.analysis_id, data.bc_method)
+    file_url, index_col, columns_data = await get_normalized_data_bc(data.analysis_id, user, db)
+
+    main_df,box_after_batch = batch_correction_pipeline(file_url, index_col,data.batch_data, columns_data, data.analysis_id, data.bc_method)
     
     normalized_data_url = save_df(main_df, name=f"{data.analysis_id}_normalized_batch_corr_data", file_format = "csv")
 
