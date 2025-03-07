@@ -18,19 +18,34 @@ def get_tile(col,control_name):
     return f"{col} vs {control_name}" 
 
 def get_volcano_plot(file_url, index_col, columns_data, metadata,analysis_id):
-    volcano_plots = []
-    df = get_data_frame(file_url, index_col=index_col)
 
+    volcano_plots = []
+    df = get_data_frame(file_url, index_col=index_col)    
     for col in columns_data["test"]:
         columns, p_val_col, fc_col = get_columns(col,metadata)
         title = get_tile(col,metadata["control_name"])
-        volcano_plot_url,expressed_genes = plot_volcano_diff(df[columns],fc_col,p_val_col,metadata["log2_cut"],metadata["pv_cutoff"],title, analysis_id)
+        vol_df = df[columns].reset_index()
+
+        volcano_plot_url,expressed_genes = plot_volcano_diff(vol_df,fc_col,p_val_col,metadata["log2_cut"],metadata["pv_cutoff"],index_col,title, analysis_id)
         volcano_plots.append([volcano_plot_url,expressed_genes])
 
     return volcano_plots
 
-def get_heatmap_plot(file_url, index_col, columns_data, metadata, data):
+
+def filter_columns(df): 
+
+    if any(i.startswith('log2_fc_') for i in df.columns):
+        df = df[[i for i in df.columns if i.startswith('log2_fc_') ]]
+    else:
+        df = df[[i for i in df.columns if i.startswith('fold_change_') ]]
+
+    return df
+
+def get_heatmap_plot(file_url, index_col, metadata, data):
     df = get_data_frame(file_url, index_col=index_col)
+    
+    df = filter_columns(df)
+
     both = True if metadata["ratio_or_log2"] == "log2_fc" else False
     fc_left = metadata["ratio_down"]
     fc_right = metadata["ratio_up"]
@@ -41,20 +56,24 @@ def get_heatmap_plot(file_url, index_col, columns_data, metadata, data):
         plot  = plot_heatmap(df,both,fc_left,fc_right,lg2cut , z_convert, data.analysis_id)
 
     else:
-        plot  = plot_elbow_plot(df,index_col,data.analysis_id )
+        plot  = plot_elbow_plot(df,data.analysis_id )
 
     return plot
 
 
-def get_kmean_plot(file_url, index_col, columns_data, metadata, data):
+def get_kmean_plot(file_url, index_col, metadata, data):
+    
     df = get_data_frame(file_url, index_col=index_col)
+
+    df = filter_columns(df)
+
     both = True if metadata["ratio_or_log2"] == "log2_fc" else False
     
     fc_left = metadata["ratio_down"]
     fc_right = metadata["ratio_up"]
     lg2cut = metadata["log2_cut"]
 
-    plot = plot_kmeans_plot(df,index_col, data.k_value ,fc_left,fc_right,lg2cut,both, data.analysis_id)
+    plot = plot_kmeans_plot(df, data.k_value ,fc_left,fc_right,lg2cut,both, data.analysis_id)
 
     return plot
 
@@ -62,4 +81,4 @@ def go_analysis(genes, p_value, species, analysis_id):
     go = get_gene_ontology(genes, p_value, species)
     circbar = get_circbar_plot(go, analysis_id)
 
-    return circbar, go      
+    return circbar, go 

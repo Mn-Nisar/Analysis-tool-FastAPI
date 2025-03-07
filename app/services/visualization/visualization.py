@@ -133,6 +133,7 @@ def get_box_plot(df, title, columns, analysis_id,normalized=False):
 
 
 def result_bar_graph(df, analysis_id):
+    df = df[[i for i in df.columns if i.startswith('expression_')]]
 
     updict = {}
     downdict = {}
@@ -340,9 +341,8 @@ def plot_heatmap(df,both,fc_left,fc_right,lg2cut , z_score, analysis_id):
     return get_plot_url
 
 
-def plot_elbow_plot(df,key, analysis_id):
+def plot_elbow_plot(df, analysis_id):
     n_c = 15
-    df.set_index(key, inplace = True)
     cols = list()
    
     if df.shape[0] <= 15:
@@ -368,7 +368,7 @@ def get_auto_figsize(df_shape):
         return (df_shape[1], int(df_shape[0]/10)+1)
 
 
-def plot_kmeans_plot(df,key,n_clusters,fc_left,fc_right,lg2cut,both, analysis_id):
+def plot_kmeans_plot(df,n_clusters,fc_left,fc_right,lg2cut,both, analysis_id):
     auto_fig_size = get_auto_figsize(df.shape)
     
     max_val = df.melt().value.max()
@@ -430,11 +430,8 @@ def plot_kmeans_plot(df,key,n_clusters,fc_left,fc_right,lg2cut,both, analysis_id
 
     matplotlib.rc_file_defaults()
 
-    return kmap , df
-
-
-
-
+    kmap = get_s3_url("K means plot",analysis_id)
+    return kmap
 
 #all code below are for circular bargraph
 #---------------------------------------------------------------------
@@ -571,4 +568,4 @@ def get_circbar_plot(df, analysis_id):
     get_plot_url = get_s3_url("Circular bar plot",analysis_id)
     return get_plot_url
 
-#------------------------------------------------ cirbar done
+#------------------------------------------------ cirbar done -----------------------------------------------------

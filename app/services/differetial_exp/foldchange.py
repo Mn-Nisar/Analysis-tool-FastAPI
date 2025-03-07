@@ -13,6 +13,4 @@ def calc_foldchange(df,columns,control_name,data):
             df.loc[(df[f'fold_change_{group}'] >= data.ratio_cut_up ) & (df[f'p_value_{group}'] > data.pv_cutoff), f"expression_{group}"] = "up-regulated"
             df.loc[(df[f'fold_change_{group}'] <= data.ratio_cut_down ) & (df[f'p_value_{group}'] > data.pv_cutoff), f"expression_{group}"] = "down-regulated"
 
-    diff_df = df[df.filter(like='expression_').apply(lambda x: x.str.contains('up-regulated|down-regulated')).any(axis=1)]
-
-    return df, diff_df
+    return df

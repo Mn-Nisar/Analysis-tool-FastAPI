@@ -14,7 +14,7 @@ from app.services.data_processing.data_preprocess import (get_columns ,
                                                            get_volcano_meta_data, get_heatmap_data, get_go_data, get_data_frame,
                                                            find_index, column_dict_to_list)
 from app.services.normalization.normalize_pipeline import  norm_pipeline
-from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap, GeneOntology
+from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap, GeneOntology , Kmean
 from app.services.aws_s3.save_to_s3 import save_df, save_lable_free_df
 from app.services.differetial_exp.diff_pipeline import diff_pipeline
 from app.services.lable_free.lable_free_analysis import protien_identify
@@ -111,37 +111,37 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
 @router.post("/differential-expression-analysis")
 async def differentail_analysis(data: Differential,user: dict = Depends(auth.get_current_user),
                                  db: AsyncSession = Depends(get_async_session),):
-    try:    
-        file_url, index_col, columns_data = await get_file_url(data.analysis_id, user, db, get_normalized=True)
-        
-        columns = get_norm_columns(columns_data)
+    # try:    
+    file_url, index_col, columns_data = await get_file_url(data.analysis_id, user, db, get_normalized=True)
+    
+    columns = get_norm_columns(columns_data)
 
-        df,diff_df,bargraph  = diff_pipeline(file_url,data, columns, index_col)
-        final_df = save_df(df, name=f"{data.analysis_id}_final_data", file_format = "csv")
-        diff_df_url = save_df(diff_df, name=f"{data.analysis_id}_differential_data", file_format = "csv")
+    df,diff_df,bargraph  = diff_pipeline(file_url,data, columns, index_col)
+    final_df = save_df(df, name=f"{data.analysis_id}_final_data", file_format = "csv")
+    diff_df_url = save_df(diff_df, name=f"{data.analysis_id}_differential_data", file_format = "csv")
 
-        q = await db.execute(select(Analysis).filter(Analysis.id == data.analysis_id))
-        analysis = q.scalars().first()
-        
-        if not analysis:
-            raise HTTPException(status_code=404, detail="Analysis record not found")
-        
-        analysis.pv_method = data.pv_method
-        analysis.pv_cutoff = data.pv_cutoff
-        analysis.ratio_or_log2 = data.ratio_log2
-        analysis.ratio_up = data.ratio_cut_up
-        analysis.ratio_down = data.ratio_cut_down
-        analysis.log2_cut =  data.log2_fc_cutoff
-        analysis.control_name = data.choose_control
-        analysis.final_data = final_df
-        analysis.diffential_data = diff_df_url
+    q = await db.execute(select(Analysis).filter(Analysis.id == data.analysis_id))
+    analysis = q.scalars().first()
+    
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis record not found")
+    
+    analysis.pv_method = data.pv_method
+    analysis.pv_cutoff = data.pv_cutoff
+    analysis.ratio_or_log2 = data.ratio_log2
+    analysis.ratio_up = data.ratio_cut_up
+    analysis.ratio_down = data.ratio_cut_down
+    analysis.log2_cut =  data.log2_fc_cutoff
+    analysis.control_name = data.choose_control
+    analysis.final_data = final_df
+    analysis.diffential_data = diff_df_url
 
-        await db.commit()
+    await db.commit()
 
-        return {"analysis_id":data.analysis_id,"final_df":final_df,"diff_df":diff_df_url,"bargraph":bargraph}
+    return {"analysis_id":data.analysis_id,"final_df":final_df,"diff_df":diff_df_url,"bargraph":bargraph}
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/lable-free-analysis")
@@ -219,19 +219,19 @@ async def volcano_plot_api(analysis_id: int,user: dict = Depends(auth.get_curren
 async def heatmap_api(data:HeatMap ,user: dict = Depends(auth.get_current_user),
                                                      db: AsyncSession = Depends(get_async_session),):
 
-    file_url, index_col, columns_data , metadata = await get_heatmap_data(data, user, db)
+    file_url, index_col , metadata = await get_heatmap_data(data, user, db)
 
-    heatmap_plot  = get_heatmap_plot(file_url, index_col, columns_data, metadata, data)
+    heatmap_plot  = get_heatmap_plot(file_url, index_col , metadata, data)
 
     return {"heatmap_plot":heatmap_plot}
 
 @router.post("/differential-kmeans")   
-async def kmeans_api(data:HeatMap ,user: dict = Depends(auth.get_current_user),
+async def kmeans_api(data:Kmean ,user: dict = Depends(auth.get_current_user),
                                                      db: AsyncSession = Depends(get_async_session),):
     
-    file_url, index_col, columns_data , metadata = await get_heatmap_data(data, user, db)
+    file_url, index_col , metadata = await get_heatmap_data(data, user, db)
 
-    kmean_plot  = get_kmean_plot(file_url, index_col, columns_data, metadata, data)
+    kmean_plot  = get_kmean_plot(file_url, index_col, metadata, data)
     
     return {"kmean_plot":kmean_plot}
 
@@ -249,4 +249,4 @@ async def gene_ontology(data:GeneOntology, user: dict = Depends(auth.get_current
 @router.post("/kegg-pathway")   
 async def kegg_pathway(analysis_id: int,pathway:str, user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session)):
-    file_url, index_col, columns_data , metadata = await get_volcano_meta_data(analysis_id, user, db)
+    pass

@@ -64,7 +64,7 @@ async def get_volcano_meta_data(analysis_id, user, db, *args,**kwargs):
         "pv_method": analysis.pv_method
         }
     
-    return analysis.file_url, analysis.index_col, analysis.column_data , metadata
+    return analysis.final_data, analysis.index_col, analysis.column_data , metadata
 
 
 async def get_heatmap_data(data,user, db, *args,**kwargs):
@@ -87,7 +87,7 @@ async def get_heatmap_data(data,user, db, *args,**kwargs):
         "control_name": analysis.control_name,
         }
     
-    return analysis.file_url, analysis.index_col, analysis.column_data , metadata
+    return analysis.diffential_data, analysis.index_col , metadata
 
 
 
@@ -207,4 +207,3 @@ def get_batch_data(data, column_names):
     # {'test': {'s1': ['Abundance R1 127C Sample', 'Abundance R2 127C Sample', 'Abundance R3 127C Sample'], 's2': ['Abundance R1 127N Sample', 'Abundance R2 127N Sample', 'Abundance R3 127N Sample'], 's3': ['Abundance R1 128C Sample', 'Abundance R2 128C Sample', 'Abundance R3 128C Sample'], 's4': ['Abundance R1 128N Sample', 'Abundance R2 128N Sample', 'Abundance R3 128N Sample']}, 'control': {'c1': ['Abundance R1 126 control', 'Abundance R2 126 control', 'Abundance R3 126 control']}}
 
     return transformed_data
-
