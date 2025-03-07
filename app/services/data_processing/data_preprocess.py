@@ -184,9 +184,10 @@ def get_norm_columns(columns_data):
 def get_control_list(columns_data):
     return list(columns_data["control"].keys())
 
-async def get_lbl_free_file_url(data):
-    df = pd.read_csv(data.analysis_file)
-    fasta_url = data.fasta_url
+async def get_lbl_free_file_url(fasta_file,analysis_file):
+    # fix this function
+    df = pd.read_csv(analysis_file)
+    fasta_url = fasta_file
     return df, fasta_url
 
 def get_batch_data(data, column_names):

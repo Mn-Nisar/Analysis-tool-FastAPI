@@ -15,6 +15,7 @@ class User(Base):
     password = Column(String(255))
     analyses = relationship("Analysis", back_populates="user")
     lable_free = relationship("LableFree", back_populates="user")
+    
 class Analysis(Base):
     __tablename__ = "analysis"
     id = Column(Integer, primary_key=True, autoincrement=True, index=True) 

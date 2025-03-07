@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form
+from fastapi import UploadFile, File
+from typing import  Literal
+
 from sqlalchemy.future import select
 from app.api.endpoints import auth
 from app.config import Settings
@@ -142,18 +145,31 @@ async def differentail_analysis(data: Differential,user: dict = Depends(auth.get
 
 
 @router.post("/lable-free-analysis")
-async def lable_free(data: LableFree, user: dict = Depends(auth.get_current_user),
-                     db: AsyncSession = Depends(get_async_session),):
-    try:
-        df, fasta_url = await get_lbl_free_file_url(data)
-        
-        result_head = df.head(10).to_dict()
+# async def lable_free(data: LableFree,fasta_url: UploadFile = File(...),
+#                         analysis_file: UploadFile = File(...), user: dict = Depends(auth.get_current_user),
+#                      db: AsyncSession = Depends(get_async_session),):
+async def lable_free(
+    quant_method: Literal["ibaq", "nsaf", "top3"] = Form(...),
+    digest_enzyme: Literal["trypsin", "lysc", "chymotrypsin"] = Form(...),
+    fasta_source: Literal["ncbi", "uniprot"] = Form(...),
+    miss_cleavage: int = Form(1),
+    min_peptide: int = Form(6),
+    max_peptide: int = Form(22),
+    fasta_file: UploadFile = File(...),
+    analysis_file: UploadFile = File(...),
+    user: dict = Depends(auth.get_current_user),
+    db: AsyncSession = Depends(get_async_session),):
 
-        result_df =  protien_identify(df,fasta_url,data.quant_method, data.miss_cleavage,
-                             data.min_peptide,data.max_peptide, data.digest_enzyme, data.fasta_source)
+    try:
+        df, fasta_url = await get_lbl_free_file_url(fasta_file,analysis_file)
+        
+
+        result_df =  protien_identify(df,fasta_url,quant_method, miss_cleavage,
+                             min_peptide,max_peptide, digest_enzyme,fasta_source)
+
+        result_head = result_df.head(10).to_dict()
 
         result_url = save_lable_free_df(result_df)
-
 
         new_lable_free = LableFree(
         user_id=user.id,  
