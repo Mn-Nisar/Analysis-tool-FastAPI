@@ -24,11 +24,7 @@ class Normalize(BaseModel):
 class BatchCorrection(BaseModel):
     analysis_id: int
     bc_method: Literal["combat","limma"]
-    batch_data: Dict = { 
-        1:['Abundance R1 126 control','Abundance R1 127C Sample', 'Abundance R1 127N Sample', 'Abundance R1 128C Sample'],
-        2:['Abundance R2 126 control','Abundance R2 127C Sample', 'Abundance R2 127N Sample', 'Abundance R2 128C Sample'],
-        3:['Abundance R3 126 control','Abundance R3 127C Sample', 'Abundance R3 127N Sample', 'Abundance R3 128C Sample']
-    }
+    batch_data: Dict[str, Any] = {}
 
 class Differential(BaseModel):
     analysis_id: int

@@ -9,13 +9,6 @@ def batch_correct(df, column_info, method, analysis_id):
     sample_columns = []
     batch_labels = []
 
-
-    column_info = { 
-       1:['Abundance R1 126 control','Abundance R1 127C Sample', 'Abundance R1 127N Sample', 'Abundance R1 128C Sample'],
-        2:['Abundance R2 126 control','Abundance R2 127C Sample', 'Abundance R2 127N Sample', 'Abundance R2 128C Sample'],
-        3:['Abundance R3 126 control','Abundance R3 127C Sample', 'Abundance R3 127N Sample', 'Abundance R3 128C Sample']
-    }
-
     for batch, groups in column_info.items():
         for sample in groups:
             sample_columns.append(f"normalized_{sample}")

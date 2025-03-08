@@ -22,7 +22,6 @@ from app.services.normalization.batch_correction import batch_correction_pipelin
 from app.services.differetial_exp.diiferential_plots import get_volcano_plot, get_heatmap_plot, get_kmean_plot
 from app.services.differetial_exp.diiferential_plots import go_analysis
 settings = Settings()
-
  
 router = APIRouter(dependencies=[Depends(auth.get_current_user)])
         
@@ -189,6 +188,12 @@ async def lable_free(
 async def batch_correction(data: BatchCorrection ,user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session),):
 
+    print("=====================================batch_data=========================================================")
+
+    print(data.batch_data)
+
+    print("=====================================batch_data=========================================================")
+
     file_url, index_col, columns_data = await get_normalized_data_bc(data.analysis_id, user, db)
 
     main_df,box_after_batch = batch_correction_pipeline(file_url, index_col,data.batch_data, columns_data, data.analysis_id, data.bc_method)
@@ -199,7 +204,6 @@ async def batch_correction(data: BatchCorrection ,user: dict = Depends(auth.get_
     analysis = q.scalars().first()
     analysis.normalized_data = normalized_data_url
     await db.commit()
-    print("box_after_batchbox_after_batchbox_after_batchbox_after_batchbox_after_batch",box_after_batch)
     return {"analysis_id":data.analysis_id,"box_after_batch":box_after_batch}
 
 
