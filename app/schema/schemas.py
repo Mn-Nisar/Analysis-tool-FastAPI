@@ -6,7 +6,7 @@ class MetadataRequest(BaseModel):
     noOfControl: int
     noOfBatches: Optional[int] = None
     expType: Literal ["techrep","biorep"]
-    fileUrl: str
+    fileUrl: str = "https://proteoark-example.s3.us-west-1.amazonaws.com/TECHNICAL.csv" 
 
 class Normalize(BaseModel):
     analysis_id: int
