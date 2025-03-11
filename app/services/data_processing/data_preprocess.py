@@ -67,6 +67,18 @@ async def get_volcano_meta_data(analysis_id, user, db, *args,**kwargs):
     return analysis.final_data, analysis.index_col, analysis.column_data , metadata
 
 
+async def get_normalized_data_bc(analysis_id, user, db, *args,**kwargs):
+    stmt = select(Analysis).where(
+        Analysis.id == analysis_id,
+        Analysis.user_id == user.id
+    )
+    result = await db.execute(stmt)
+    analysis = result.scalars().first()
+    if not analysis:    
+        raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
+    return analysis.normalized_data, analysis.index_col, analysis.column_data
+
+
 async def get_heatmap_data(data,user, db, *args,**kwargs):
 
     stmt = select(Analysis).where(
@@ -91,17 +103,6 @@ async def get_heatmap_data(data,user, db, *args,**kwargs):
 
 
 
-async def get_normalized_data_bc(analysis_id, user, db, *args,**kwargs):
-    stmt = select(Analysis).where(
-        Analysis.id == analysis_id,
-        Analysis.user_id == user.id
-    )
-    result = await db.execute(stmt)
-    analysis = result.scalars().first()
-    if not analysis:    
-        raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
-    return analysis.normalized_data, analysis.index_col, analysis.column_data
-
 async def get_go_data(analysis_id, user, db, *args,**kwargs):
     stmt = select(Analysis).where(
         Analysis.id == analysis_id,
@@ -111,8 +112,8 @@ async def get_go_data(analysis_id, user, db, *args,**kwargs):
     analysis = result.scalars().first()
     if not analysis:    
         raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
-    genes = pd.read_csv(analysis.normalized_data, usecols=[analysis.index_col])
-    return genes[analysis.index_col].tolist()
+    
+    return analysis.diffential_data , analysis.index_col
 
 def get_data_frame(url,*args,**kwargs):
     if PRODUCTION:

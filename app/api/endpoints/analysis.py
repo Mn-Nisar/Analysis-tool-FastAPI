@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Form
 from fastapi import UploadFile, File
 from typing import  Literal
-
+import pandas as pd
 from sqlalchemy.future import select
 from app.api.endpoints import auth
 from app.config import Settings
@@ -188,12 +188,6 @@ async def lable_free(
 async def batch_correction(data: BatchCorrection ,user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session),):
 
-    print("=====================================batch_data=========================================================")
-
-    print(data.batch_data)
-
-    print("=====================================batch_data=========================================================")
-
     file_url, index_col, columns_data = await get_normalized_data_bc(data.analysis_id, user, db)
 
     main_df,box_after_batch = batch_correction_pipeline(file_url, index_col,data.batch_data, columns_data, data.analysis_id, data.bc_method)
@@ -244,11 +238,24 @@ async def gene_ontology(data:GeneOntology, user: dict = Depends(auth.get_current
                                                      db: AsyncSession = Depends(get_async_session),):
     # all species can be found here 
     # https://biit.cs.ut.ee/gprofiler/api/util/organisms_list/
-    genes = await get_go_data(data.analysis_id, user, db)
 
-    plot, data = go_analysis(genes, data.p_value, data.species,data.analysis_id )
+    file_url, gene_col = await get_go_data(data.analysis_id, user, db)
 
-    return {"plot":plot,"data":data}
+    df = get_data_frame(file_url,index_col = gene_col )
+
+    df = df.reset_index()
+    genes = df[gene_col].tolist()
+
+    plot, go_data = go_analysis(genes, data.p_value, data.species,data.analysis_id )
+
+    go_data_url = save_df(go_data, name=f"{data.analysis_id}_GO_data", file_format = "csv")
+
+    q = await db.execute(select(Analysis).filter(Analysis.id == data.analysis_id))
+    analysis = q.scalars().first()
+    analysis.gene_ontology = go_data_url
+    await db.commit()
+
+    return {"plot":plot,"go_data_url":go_data_url}
 
 @router.post("/kegg-pathway")   
 async def kegg_pathway(analysis_id: int,pathway:str, user: dict = Depends(auth.get_current_user),

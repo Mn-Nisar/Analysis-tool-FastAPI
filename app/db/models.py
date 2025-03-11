@@ -39,7 +39,7 @@ class Analysis(Base):
     control_name = Column(String(255) , nullable=True)
     final_data = Column(String(255) , nullable=True)
     diffential_data = Column(String(255) , nullable=True)
-
+    gene_ontology = Column(String(255) , nullable=True)
     user = relationship("User", back_populates="analyses")
 
 class LableFree(Base):
@@ -47,5 +47,4 @@ class LableFree(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), index=True)
     result = Column(String(255), nullable=True)
-
     user = relationship("User", back_populates="lable_free")

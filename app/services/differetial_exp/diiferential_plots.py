@@ -80,5 +80,5 @@ def get_kmean_plot(file_url, index_col, metadata, data):
 def go_analysis(genes, p_value, species, analysis_id):
     go = get_gene_ontology(genes, p_value, species)
     circbar = get_circbar_plot(go, analysis_id)
-
+    print("circbarcircbarcircbarcircbarcircbarcircbarcircbarcircbarcircbarcircbarcircbarcircbar",circbar)
     return circbar, go 
