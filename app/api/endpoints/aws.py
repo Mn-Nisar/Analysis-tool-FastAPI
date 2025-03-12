@@ -42,7 +42,7 @@ async def upload_file_to_s3(file: UploadFile = File(...)):
             csv_buffer.seek(0)
             file_data = csv_buffer.getvalue()
         elif file_extension in ["xls", "xlsx"]:
-            df = pd.read_excel(io.BytesIO(file_bytes))
+            df = pd.read_excel(io.BytesIO(file_bytes), engine='openpyxl')
             csv_buffer = io.BytesIO()
             df.to_csv(csv_buffer, index=False)
             csv_buffer.seek(0)

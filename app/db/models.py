@@ -14,7 +14,7 @@ class User(Base):
     email = Column(String(100), unique=True, index=True)
     password = Column(String(255))
     analyses = relationship("Analysis", back_populates="user")
-    lable_free = relationship("LableFree", back_populates="user")
+    lable_free = relationship("LableFreeAnalysis", back_populates="user")
     
 class Analysis(Base):
     __tablename__ = "analysis"
@@ -43,10 +43,11 @@ class Analysis(Base):
     direct_differential = Column(Boolean, default=False)
     user = relationship("User", back_populates="analyses")
 
-class LableFree(Base):
+class LableFreeAnalysis(Base):
     __tablename__ = "lable_free_analysis"
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), index=True)
     result = Column(String(255), nullable=True)
     user = relationship("User", back_populates="lable_free")
 
+    

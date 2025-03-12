@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy.future import select
 from app.api.endpoints import auth
 from app.config import Settings
-from app.db.models import Analysis,LableFree
+from app.db.models import Analysis,LableFreeAnalysis
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_async_session
 from app.services.data_processing.data_preprocess import (get_columns , 
@@ -14,13 +14,15 @@ from app.services.data_processing.data_preprocess import (get_columns ,
                                                            get_volcano_meta_data, get_heatmap_data, get_go_data, get_data_frame,
                                                            find_index, column_dict_to_list, get_pathway_list, get_kegg_data)
 from app.services.normalization.normalize_pipeline import  norm_pipeline
-from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap, GeneOntology , Kmean , MetadataDirect
+from app.schema.schemas import MetadataRequest, Normalize , Differential, BatchCorrection, HeatMap, GeneOntology , Kmean , MetadataDirect
 from app.services.aws_s3.save_to_s3 import save_df, save_lable_free_df
 from app.services.differetial_exp.diff_pipeline import diff_pipeline
 from app.services.lable_free.lable_free_analysis import protien_identify
 from app.services.normalization.batch_correction import batch_correction_pipeline
 from app.services.differetial_exp.diiferential_plots import get_volcano_plot, get_heatmap_plot, get_kmean_plot, get_kegg_pathway
 from app.services.differetial_exp.diiferential_plots import go_analysis
+import io 
+
 settings = Settings()
  
 router = APIRouter(dependencies=[Depends(auth.get_current_user)])
@@ -54,9 +56,6 @@ async def save_metadata(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
 
 
 @router.post("/pre-analysis-direct")
@@ -178,9 +177,6 @@ async def differentail_analysis(data: Differential,user: dict = Depends(auth.get
 
 
 @router.post("/lable-free-analysis")
-# async def lable_free(data: LableFree,fasta_url: UploadFile = File(...),
-#                         analysis_file: UploadFile = File(...), user: dict = Depends(auth.get_current_user),
-#                      db: AsyncSession = Depends(get_async_session),):
 async def lable_free(
     quant_method: Literal["ibaq", "nsaf", "top3"] = Form(...),
     digest_enzyme: Literal["trypsin", "lysc", "chymotrypsin"] = Form(...),
@@ -193,30 +189,32 @@ async def lable_free(
     user: dict = Depends(auth.get_current_user),
     db: AsyncSession = Depends(get_async_session),):
 
-    try:
-        df, fasta_url = await get_lbl_free_file_url(fasta_file,analysis_file)
-        
+    # try:
 
-        result_df =  protien_identify(df,fasta_url,quant_method, miss_cleavage,
-                             min_peptide,max_peptide, digest_enzyme,fasta_source)
+    df = await get_lbl_free_file_url(analysis_file)
+    file_content_fasta = await fasta_file.read()
+    fasta_text = file_content_fasta.decode("utf-8", errors="replace")
 
-        result_head = result_df.head(10).to_dict()
+    result_df =  protien_identify(df,fasta_text,quant_method, miss_cleavage,
+                            min_peptide,max_peptide, digest_enzyme,fasta_source)
 
-        result_url = save_lable_free_df(result_df)
+    result_head = result_df.head(10).to_dict()
 
-        new_lable_free = LableFree(
-        user_id=user.id,  
-        result=result_url,
-        )
-    
-        db.add(new_lable_free)
-        await db.flush() 
-        await db.commit() 
-        await db.refresh(new_lable_free) 
+    result_url = save_lable_free_df(result_df)
 
-        return {"result_url":result_url,"result_head":result_head}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    new_lable_free = LableFreeAnalysis(
+    user_id=user.id,  
+    result=result_url,
+    )
+
+    db.add(new_lable_free)
+    await db.flush() 
+    await db.commit() 
+    await db.refresh(new_lable_free) 
+
+    return {"result_url":result_url,"result_head":result_head}
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/batch-correction")
 async def batch_correction(data: BatchCorrection ,user: dict = Depends(auth.get_current_user),

@@ -92,20 +92,18 @@ def top3calc(x):
 def convert_fasta(fasta_file, fastadb):
     seq = []
     header = []
-
-    with open(fasta_file ,encoding="utf8", errors="replace") as f:
-
-        block = []
-        for line in f:
-            if line.startswith('>'):
-                if block:
-                    seq.append(''.join(block))
-                    block = []
-                header.append(line)
-            else:
-                block.append(line.strip())
-        if block:
-            seq.append(''.join(block))
+    block = []
+    fasta_file = fasta_file.split('\n')
+    for line in fasta_file:
+        if line.startswith('>'):
+            if block:
+                seq.append(''.join(block))
+                block = []
+            header.append(line)
+        else:
+            block.append(line.strip())
+    if block:
+        seq.append(''.join(block))
     
     if fastadb == "ncbi":
         header = [i.split(' ', 1)[0].replace('>','').strip() for i in header]
@@ -122,8 +120,7 @@ def convert_fasta(fasta_file, fastadb):
 def protien_identify(df,fastafile,prot_ident, missed_clevage,pep_min_len,pep_max_len, enzyme, fastsdb):
 
     fasta_df = convert_fasta(fastafile, fastsdb)
- 
-    if prot_ident == 'iBAQ' or prot_ident == 'TOP3':
+    if prot_ident == 'ibaq' or prot_ident == 'top3':
         gene_col =  get_gene_column(df.columns)
         df = df.groupby(gene_col).agg(pd.Series.tolist)
         df.reset_index(inplace = True)
@@ -141,13 +138,13 @@ def protien_identify(df,fastafile,prot_ident, missed_clevage,pep_min_len,pep_max
 
         df = df[['Annotated Sequence',gene_col,'Intensity','theoritical_peptide']]
 
-        if prot_ident == 'iBAQ':
+        if prot_ident == 'ibaq':
             df['Sum_of_intensity'] = df['Intensity'].apply(lambda x: sum(x))
-            df['iBAQ'] = (df['Sum_of_intensity']).div(df['theoritical_peptide'])
-            prot_id = 'iBAQ'
+            df['ibaq'] = (df['Sum_of_intensity']).div(df['theoritical_peptide'])
+            prot_id = 'ibaq'
         else:
-            prot_id = 'TOP3'
-            df['TOP3'] = df['Intensity'].apply(top3calc)
+            prot_id = 'top3'
+            df['top3'] = df['Intensity'].apply(top3calc)
 
         df = df[[gene_col,'theoritical_peptide','Sum_of_intensity',prot_id]]
 

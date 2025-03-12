@@ -52,7 +52,7 @@ def save_lable_free_df(df):
     
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     random_num = random.randint(1000, 9999)
-    file_name = f"lable_free-result_{timestamp}_{random_num}.csv"
+    file_name = f"lable_free-result_{timestamp}_{random_num}"
 
     url = save_df(df, file_name, "csv")
     return url

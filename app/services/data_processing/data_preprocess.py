@@ -5,7 +5,7 @@ from sqlalchemy.future import select
 from app.db.models import Analysis
 from app.services.external_api import gprofiler_api
 from app.config import Settings
-
+import io
 settings = Settings()
 
 PRODUCTION = settings.is_production
@@ -199,11 +199,29 @@ def get_norm_columns(columns_data):
 def get_control_list(columns_data):
     return list(columns_data["control"].keys())
 
-async def get_lbl_free_file_url(fasta_file,analysis_file):
-    # fix this function
-    df = pd.read_csv(analysis_file)
-    fasta_url = fasta_file
-    return df, fasta_url
+
+async def get_lbl_free_file_url(file):
+        
+        filename_parts = file.filename.rsplit(".", 1)
+        file_bytes = await file.read()
+        file_extension = filename_parts[-1].lower()
+
+        df = pd.DataFrame()
+        if file_extension == "csv":
+            df = pd.read_csv(io.BytesIO(file_bytes))
+
+        elif file_extension == "txt":
+            df = pd.read_csv(io.BytesIO(file_bytes), sep="\t")
+
+        elif file_extension in ["xls", "xlsx"]:
+            df = pd.read_excel(io.BytesIO(file_bytes), engine='openpyxl')
+
+        else:
+            return df
+        
+        return df
+
+
 
 def get_batch_data(data, column_names):
 
