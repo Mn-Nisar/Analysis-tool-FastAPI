@@ -27,7 +27,7 @@ def diff_pipeline(file_url,data, columns, idex_col):
 
     bargraph = result_bar_graph(diff_df, data.analysis_id)
 
-    return df,diff_df,bargraph
+    return df,diff_df,bargraph 
     
 
 

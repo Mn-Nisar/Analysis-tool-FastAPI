@@ -115,6 +115,20 @@ async def get_go_data(analysis_id, user, db, *args,**kwargs):
     
     return analysis.diffential_data , analysis.index_col
 
+async def get_kegg_data(analysis_id, user, db, *args,**kwargs):
+    stmt = select(Analysis).where(
+        Analysis.id == analysis_id,
+        Analysis.user_id == user.id
+    )
+    result = await db.execute(stmt)
+    analysis = result.scalars().first()
+    if not analysis:    
+        raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
+    
+    return analysis.diffential_data , analysis.gene_ontology ,analysis.index_col
+
+
+
 def get_data_frame(url,*args,**kwargs):
     if PRODUCTION:
         if kwargs.get('index_col'):
@@ -204,7 +218,15 @@ def get_batch_data(data, column_names):
     transformed_data["test"] = dict(zip(column_names["test"], grouped_samples))
     transformed_data["control"] = dict(zip(column_names["control"], grouped_control))
 
-    print(transformed_data)
-    # {'test': {'s1': ['Abundance R1 127C Sample', 'Abundance R2 127C Sample', 'Abundance R3 127C Sample'], 's2': ['Abundance R1 127N Sample', 'Abundance R2 127N Sample', 'Abundance R3 127N Sample'], 's3': ['Abundance R1 128C Sample', 'Abundance R2 128C Sample', 'Abundance R3 128C Sample'], 's4': ['Abundance R1 128N Sample', 'Abundance R2 128N Sample', 'Abundance R3 128N Sample']}, 'control': {'c1': ['Abundance R1 126 control', 'Abundance R2 126 control', 'Abundance R3 126 control']}}
-
     return transformed_data
+
+
+def get_pathway_list(df):
+        
+    pathway_list = df[['native','name']].loc[df['group'] == 'KEGG']
+    pathway_list = pathway_list.loc[pathway_list['native'] != 'KEGG:00000' ]
+    pathway_list.set_index('native', inplace = True )
+
+    pathway_list = pathway_list.to_json() 
+
+    return pathway_list

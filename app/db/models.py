@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, JSON , Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import as_declarative
 
@@ -40,6 +40,7 @@ class Analysis(Base):
     final_data = Column(String(255) , nullable=True)
     diffential_data = Column(String(255) , nullable=True)
     gene_ontology = Column(String(255) , nullable=True)
+    direct_differential = Column(Boolean, default=False)
     user = relationship("User", back_populates="analyses")
 
 class LableFree(Base):
@@ -48,3 +49,4 @@ class LableFree(Base):
     user_id = Column(Integer, ForeignKey('users.id'), index=True)
     result = Column(String(255), nullable=True)
     user = relationship("User", back_populates="lable_free")
+

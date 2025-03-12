@@ -8,6 +8,11 @@ class MetadataRequest(BaseModel):
     expType: Literal ["techrep","biorep"]
     fileUrl: str = "https://proteoark-example.s3.us-west-1.amazonaws.com/TECHNICAL.csv" 
 
+class MetadataDirect(BaseModel):
+    noOfTest: int
+    noOfControl: int
+    fileUrl: str = "https://proteoark-example.s3.us-west-1.amazonaws.com/NORMALIZED_TECHNICAL.csv" 
+
 class Normalize(BaseModel):
     analysis_id: int
     norm_method: Literal["median","sum","quantile","irs","z_score","tmm"]

@@ -39,7 +39,7 @@ def get_gene_ontology(genes, p_value, species):
                     user_threshold=p_value,
                     )
     
-    go = go[['native','name','p_value','intersection_size','source']]
+    go = go[['native','name','p_value','intersection_size','source','intersections']]
     go.sort_values(by=['source'], inplace=True)
     go.rename(columns = {"intersection_size": "value","source":"group"},inplace = True)
 

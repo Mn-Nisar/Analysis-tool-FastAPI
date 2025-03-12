@@ -1,6 +1,7 @@
 import pandas as pd
 import statistics
 import re
+from app.services.external_api.gprofiler_code import GProfiler
 
 def get_gene_column(columns):
 
@@ -17,7 +18,7 @@ def get_gene_column(columns):
 
 
 def convert_acc_to_gene(accessions):
-    gp = my_gprofiler.GProfiler(return_dataframe=True)
+    gp = GProfiler(return_dataframe=True)
     
     gs = gp.convert(organism='hsapiens',
             query=accessions,

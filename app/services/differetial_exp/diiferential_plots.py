@@ -1,9 +1,10 @@
+import ast
 from app.services.data_processing.data_preprocess import get_data_frame
 from app.services.visualization.visualization import (plot_volcano_diff, plot_heatmap,
                                                        plot_elbow_plot, plot_kmeans_plot,
                                                        get_circbar_plot)
 from app.services.external_api.gprofiler_api import get_gene_ontology
-
+from app.services.external_api.kegg_pathway import draw_pathway
 def get_columns(col, metadata):
     pv_methods = {
         "two_anova": "p_value_2_way_anova",
@@ -80,5 +81,40 @@ def get_kmean_plot(file_url, index_col, metadata, data):
 def go_analysis(genes, p_value, species, analysis_id):
     go = get_gene_ontology(genes, p_value, species)
     circbar = get_circbar_plot(go, analysis_id)
-    print("circbarcircbarcircbarcircbarcircbarcircbarcircbarcircbarcircbarcircbarcircbarcircbar",circbar)
     return circbar, go 
+
+def get_kegg_pathway(file_url, gene_col,go_data, pathway):
+    
+    df = get_data_frame(file_url, index_col=gene_col)
+    df.reset_index(inplace=True)
+    go_df = get_data_frame(go_data, index_col="native")
+    go_df.reset_index(inplace=True)
+    go_df = go_df.loc[go_df['native'] == pathway]
+
+    df = df[[i for i in df.columns if i.startswith("expression_")]] 
+
+    df["avg_expression"] = df.apply(
+        lambda row: "up-regulated" if (row == "up-regulated").sum() >= (row == "down-regulated").sum() 
+        else "down-regulated", 
+        axis=1
+    )
+
+    df.loc[(df['avg_expression'] == "Upregulated") , 'color'] = 'red'
+    df.loc[(df['avg_expression'] == "Downregulated") , 'color'] = 'green'
+    
+    go_df['intersections'] = go_df['intersections'].apply(lambda x:ast.literal_eval(x))
+    go_df = go_df.explode('intersections')
+
+    df = go_df.merge(df, left_on='intersections' , right_on=gene_col)
+    
+    color_dict = dict(zip(df["intersections"], df["color"]))
+    
+    gene_color_df = df[["intersections","color"]]
+    gene_color_df.set_index('intersections',inplace = True)
+    gene_color = gene_color_df.to_json()
+
+    pathway_image = draw_pathway(pathway , color_dict)
+
+    
+    return pathway_image, gene_color 
+    

@@ -12,14 +12,14 @@ from app.services.data_processing.data_preprocess import (get_columns ,
                                                            get_file_url, get_norm_columns,
                                                            get_lbl_free_file_url, get_normalized_data_bc,
                                                            get_volcano_meta_data, get_heatmap_data, get_go_data, get_data_frame,
-                                                           find_index, column_dict_to_list)
+                                                           find_index, column_dict_to_list, get_pathway_list, get_kegg_data)
 from app.services.normalization.normalize_pipeline import  norm_pipeline
-from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap, GeneOntology , Kmean
+from app.schema.schemas import MetadataRequest, Normalize , Differential, LableFree, BatchCorrection, HeatMap, GeneOntology , Kmean , MetadataDirect
 from app.services.aws_s3.save_to_s3 import save_df, save_lable_free_df
 from app.services.differetial_exp.diff_pipeline import diff_pipeline
 from app.services.lable_free.lable_free_analysis import protien_identify
 from app.services.normalization.batch_correction import batch_correction_pipeline
-from app.services.differetial_exp.diiferential_plots import get_volcano_plot, get_heatmap_plot, get_kmean_plot
+from app.services.differetial_exp.diiferential_plots import get_volcano_plot, get_heatmap_plot, get_kmean_plot, get_kegg_pathway
 from app.services.differetial_exp.diiferential_plots import go_analysis
 settings = Settings()
  
@@ -31,17 +31,50 @@ async def save_metadata(
     user: dict = Depends(auth.get_current_user), 
     db: AsyncSession = Depends(get_async_session),
 ):
+    try:
+
+        new_analysis = Analysis(
+            user_id=user.id,  
+            no_of_test=data.noOfTest,
+            no_of_control=data.noOfControl,
+            no_of_batches=data.noOfBatches,
+            exp_type=data.expType,
+            file_url=data.fileUrl,
+        )
+
+        db.add(new_analysis)
+        await db.flush() 
+        await db.commit() 
+        await db.refresh(new_analysis)  
+
+        columns = get_columns(data.fileUrl)  
+
+        return {"analysis_id": new_analysis.id, "columns": columns, "no_of_test":data.noOfTest,"no_of_control":data.noOfControl,
+                "exp_type":data.expType,"no_of_batches":data.noOfBatches}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+
+@router.post("/pre-analysis-direct")
+async def save_metadata_direct(
+    data: MetadataDirect,
+    user: dict = Depends(auth.get_current_user), 
+    db: AsyncSession = Depends(get_async_session),
+):
     # try:
 
     new_analysis = Analysis(
         user_id=user.id,  
         no_of_test=data.noOfTest,
         no_of_control=data.noOfControl,
-        no_of_batches=data.noOfBatches,
-        exp_type=data.expType,
         file_url=data.fileUrl,
+        direct_differential = True,
     )
-    
+
     db.add(new_analysis)
     await db.flush() 
     await db.commit() 
@@ -49,11 +82,10 @@ async def save_metadata(
 
     columns = get_columns(data.fileUrl)  
 
-    return {"analysis_id": new_analysis.id, "columns": columns, "no_of_test":data.noOfTest,"no_of_control":data.noOfControl,
-            "exp_type":data.expType,"no_of_batches":data.noOfBatches}
+    return {"analysis_id": new_analysis.id, "columns": columns, "no_of_test":data.noOfTest,"no_of_control":data.noOfControl}
 
-# except Exception as e:
-#     raise HTTPException(status_code=500, detail=str(e))
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/normalization")
 async def data_normalization(data: Normalize,user: dict = Depends(auth.get_current_user),
@@ -106,6 +138,8 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
             "dropped_df": dropped_df
                     }
    
+
+
 
 @router.post("/differential-expression-analysis")
 async def differentail_analysis(data: Differential,user: dict = Depends(auth.get_current_user),
@@ -248,6 +282,8 @@ async def gene_ontology(data:GeneOntology, user: dict = Depends(auth.get_current
 
     plot, go_data = go_analysis(genes, data.p_value, data.species,data.analysis_id )
 
+    kegg_path_list = get_pathway_list(go_data)
+    
     go_data_url = save_df(go_data, name=f"{data.analysis_id}_GO_data", file_format = "csv")
 
     q = await db.execute(select(Analysis).filter(Analysis.id == data.analysis_id))
@@ -255,9 +291,24 @@ async def gene_ontology(data:GeneOntology, user: dict = Depends(auth.get_current
     analysis.gene_ontology = go_data_url
     await db.commit()
 
-    return {"plot":plot,"go_data_url":go_data_url}
+    return {"plot":plot,"go_data_url":go_data_url,'kegg_path_list':kegg_path_list}
 
-@router.post("/kegg-pathway")   
+@router.post("/kegg-pathway")
 async def kegg_pathway(analysis_id: int,pathway:str, user: dict = Depends(auth.get_current_user),
                              db: AsyncSession = Depends(get_async_session)):
-    pass
+
+    file_url,go_data, gene_col = await get_kegg_data(analysis_id, user, db)
+
+    pathway_image, gene_color = get_kegg_pathway(file_url, gene_col,go_data, pathway)
+    
+    return {"pathway_image":pathway_image,"gene_color":gene_color}
+
+@router.post("/kegg-pathway")
+async def string_db(analysis_id: int,confidence:str, user: dict = Depends(auth.get_current_user),
+                             db: AsyncSession = Depends(get_async_session)):
+    file_url, gene_col = await get_go_data(analysis_id, user, db)
+    df = get_data_frame(file_url,index_col = gene_col )
+    df = df.reset_index()
+    genes = df[gene_col].tolist()
+
+    return {'genes':genes}
