@@ -154,7 +154,7 @@ def get_data_frame(url,*args,**kwargs):
     else:
         filename = url.split("/")[-1].strip()
         local_path = os.path.join("app", "static_files", filename)        
-        if kwargs.get('index_col'):
+        if kwargs.get('index_col') and not kwargs.get('direct'):
             df = pd.read_csv(local_path, index_col=kwargs['index_col'])
         else:
             df = pd.read_csv(url)
