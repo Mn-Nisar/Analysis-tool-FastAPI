@@ -42,9 +42,11 @@ class Differential(BaseModel):
     ratio_cut_up: float = 1.5
     ratio_cut_down: float = 0.67
     log2_fc_cutoff: float = 0.5
-    direct_differntial: bool = False
     choose_control: str
     column_data: Dict[str, Any] = {}
+
+    direct_differntial: bool = False
+    gene_column: Optional[str] = None
 
 
 class HeatMap(BaseModel):

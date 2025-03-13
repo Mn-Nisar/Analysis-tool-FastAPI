@@ -44,6 +44,20 @@ async def get_file_url(analysis_id, user, db, *args,**kwargs):
     else:
         return analysis.file_url
 
+async def get_file_url_direct_diff(analysis_id, user, db, *args,**kwargs):
+
+    stmt = select(Analysis).where(
+        Analysis.id == analysis_id,
+        Analysis.user_id == user.id
+    )
+    result = await db.execute(stmt)
+    analysis = result.scalars().first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
+    else:
+        return analysis.file_url
+
+
 async def get_volcano_meta_data(analysis_id, user, db, *args,**kwargs):
     stmt = select(Analysis).where(
         Analysis.id == analysis_id,

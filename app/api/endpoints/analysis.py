@@ -9,7 +9,7 @@ from app.db.models import Analysis,LableFreeAnalysis
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_async_session
 from app.services.data_processing.data_preprocess import (get_columns , 
-                                                           get_file_url, get_norm_columns,
+                                                           get_file_url, get_file_url_direct_diff, get_norm_columns,
                                                            get_lbl_free_file_url, get_normalized_data_bc,
                                                            get_volcano_meta_data, get_heatmap_data, get_go_data, get_data_frame,
                                                            find_index, column_dict_to_list, get_pathway_list, get_kegg_data)
@@ -144,9 +144,15 @@ async def data_normalization(data: Normalize,user: dict = Depends(auth.get_curre
 async def differentail_analysis(data: Differential,user: dict = Depends(auth.get_current_user),
                                  db: AsyncSession = Depends(get_async_session),):
     # try:    
-    file_url, index_col, columns_data = await get_file_url(data.analysis_id, user, db, get_normalized=True)
+
+    if data.direct_differntial:
+        index_col = data.gene_column
+        columns = data.column_data
+        file_url = await get_file_url_direct_diff(data.analysis_id, user, db)
+    else:
+        file_url, index_col, columns_data = await get_file_url(data.analysis_id, user, db, get_normalized=True)
     
-    columns = get_norm_columns(columns_data)
+        columns = get_norm_columns(columns_data)
 
     df,diff_df,bargraph  = diff_pipeline(file_url,data, columns, index_col)
     final_df = save_df(df, name=f"{data.analysis_id}_final_data", file_format = "csv")
@@ -167,6 +173,9 @@ async def differentail_analysis(data: Differential,user: dict = Depends(auth.get
     analysis.control_name = data.choose_control
     analysis.final_data = final_df
     analysis.diffential_data = diff_df_url
+    
+    if data.direct_differntial:
+        analysis.index_col = data.gene_column
 
     await db.commit()
 
