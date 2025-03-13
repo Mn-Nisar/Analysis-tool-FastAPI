@@ -181,7 +181,7 @@ async def differentail_analysis(data: Differential,user: dict = Depends(auth.get
 
     return {"analysis_id":data.analysis_id,"final_df":final_df,"diff_df":diff_df_url,"bargraph":bargraph}
 
-    # except Exception as e:
+    # except Exception as e:  
     #     raise HTTPException(status_code=500, detail=str(e))
 
 
