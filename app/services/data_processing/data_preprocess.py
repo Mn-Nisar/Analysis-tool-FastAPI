@@ -144,6 +144,7 @@ async def get_kegg_data(analysis_id, user, db, *args,**kwargs):
 
 
 def get_data_frame(url,*args,**kwargs):
+    print("PRODUCTION", PRODUCTION)
     if PRODUCTION:
         if kwargs.get('index_col'):
 

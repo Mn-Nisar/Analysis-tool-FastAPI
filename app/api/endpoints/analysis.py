@@ -145,13 +145,13 @@ async def differentail_analysis(data: Differential,user: dict = Depends(auth.get
                                  db: AsyncSession = Depends(get_async_session),):
     # try:    
 
+    
     if data.direct_differntial:
         index_col = data.gene_column
         columns = data.column_data
         file_url = await get_file_url_direct_diff(data.analysis_id, user, db)
     else:
         file_url, index_col, columns_data = await get_file_url(data.analysis_id, user, db, get_normalized=True)
-    
         columns = get_norm_columns(columns_data)
 
     df,diff_df,bargraph  = diff_pipeline(file_url,data, columns, index_col)
