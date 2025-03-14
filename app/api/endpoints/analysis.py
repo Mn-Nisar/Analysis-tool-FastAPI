@@ -308,7 +308,6 @@ async def kegg_pathway(analysis_id: int,pathway:str, user: dict = Depends(auth.g
     file_url,go_data, gene_col = await get_kegg_data(analysis_id, user, db)
 
     pathway_image, gene_color = get_kegg_pathway(file_url, gene_col,go_data, pathway)
-    print("pathway_image=====================",pathway_image)
     return {"pathway_image":pathway_image,"gene_color":gene_color}
 
 # @router.post("/kegg")
