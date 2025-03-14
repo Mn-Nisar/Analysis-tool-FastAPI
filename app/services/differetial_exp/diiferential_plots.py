@@ -86,12 +86,14 @@ def go_analysis(genes, p_value, species, analysis_id):
 def get_kegg_pathway(file_url, gene_col,go_data, pathway):
     
     df = get_data_frame(file_url, index_col=gene_col)
-    df.reset_index(inplace=True)
+    
     go_df = get_data_frame(go_data, index_col="native")
     go_df.reset_index(inplace=True)
     go_df = go_df.loc[go_df['native'] == pathway]
 
     df = df[[i for i in df.columns if i.startswith("expression_")]] 
+
+    df.reset_index(inplace=True)
 
     df["avg_expression"] = df.apply(
         lambda row: "up-regulated" if (row == "up-regulated").sum() >= (row == "down-regulated").sum() 
@@ -102,6 +104,7 @@ def get_kegg_pathway(file_url, gene_col,go_data, pathway):
     df.loc[(df['avg_expression'] == "Upregulated") , 'color'] = 'red'
     df.loc[(df['avg_expression'] == "Downregulated") , 'color'] = 'green'
     
+
     go_df['intersections'] = go_df['intersections'].apply(lambda x:ast.literal_eval(x))
     go_df = go_df.explode('intersections')
 

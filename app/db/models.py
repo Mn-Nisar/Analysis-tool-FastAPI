@@ -14,6 +14,7 @@ class User(Base):
     email = Column(String(100), unique=True, index=True)
     password = Column(String(255))
     analyses = relationship("Analysis", back_populates="user")
+    vizualization = relationship("Vizualize", back_populates="user")
     lable_free = relationship("LableFreeAnalysis", back_populates="user")
     
 class Analysis(Base):
@@ -50,4 +51,10 @@ class LableFreeAnalysis(Base):
     result = Column(String(255), nullable=True)
     user = relationship("User", back_populates="lable_free")
 
-    
+class Vizualize(Base):
+    __tablename__ = "vizualization"
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), index=True)
+    viz_type = Column(String(50), nullable=True)
+    viz_data = Column(String(255), nullable=True)
+    user = relationship("User", back_populates="vizualization")

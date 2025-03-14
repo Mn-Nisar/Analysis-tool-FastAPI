@@ -2,7 +2,7 @@ import os
 from fastapi import HTTPException
 import pandas as pd
 from sqlalchemy.future import select
-from app.db.models import Analysis
+from app.db.models import Analysis, Vizualize
 from app.services.external_api import gprofiler_api
 from app.config import Settings
 import io
@@ -263,3 +263,27 @@ def get_pathway_list(df):
     pathway_list = pathway_list.to_json() 
 
     return pathway_list
+
+# complete this function
+def get_example_file(file_type):
+    if file_type == "csv":
+        return os.path.join("app", "static_files", "example.csv")
+    elif file_type == "txt":
+        return os.path.join("app", "static_files", "example.txt")
+    elif file_type == "xlsx":
+        return os.path.join("app", "static_files", "example.xlsx")
+    else:
+        return None
+
+
+async def get_plot_url(plot_id, user, db, *args,**kwargs):
+    stmt = select(Vizualize).where(
+        Vizualize.id == plot_id,
+        Vizualize.user_id == user.id
+    )
+    result = await db.execute(stmt)
+    viz = result.scalars().first()
+    
+    if not viz:
+        raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
+    return viz.file_url, viz.viz_type

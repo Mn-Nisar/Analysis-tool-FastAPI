@@ -63,7 +63,14 @@ class GeneOntology(BaseModel):
     p_value: float = 0.05
     species: str = "hsapiens"
 
-class KeggPathway(BaseModel):
-    analysis_id: int
-    p_value: float = 0.05
-    species: str = "hsapiens"
+
+class PlotData(BaseModel):
+    plot_id: int
+    viz_type: Literal["cicrular","volcano","pca","rain","ma-plot","heatmap-heirarch","heatmap-kmean","upset",
+                    "density","violion","box","bubble","histogram","s-curve","venn"]
+    fileUrl: str = None
+    example: bool = False
+
+class VizualizeSchema(BaseModel):
+    viz_id: int
+    meta_data: Dict[str, Any] = { }

@@ -5,6 +5,7 @@ from PIL import ImageDraw, ImageColor
 import base64
 import requests
 from io import BytesIO
+from fastapi import HTTPException
 
 def parse_conf(conf_result):
     for line in conf_result.splitlines():
@@ -74,7 +75,8 @@ def build_png(img , conf_data, gene_color):
         return pathway
 
 
-def draw_pathway(req_pathway , color_dict ):
+def draw_pathway(req_pathway , color_dict):
+    # try:
     req_pathway = req_pathway.split(':')[-1]
     req_pathway = req_pathway.strip()
     req_pathway = 'map'+req_pathway
@@ -93,3 +95,5 @@ def draw_pathway(req_pathway , color_dict ):
         final_image = build_png(img , conf_data,  color_dict)
 
         return final_image
+    # except Exception as e:
+    #     raise HTTPException(status_code=404, detail="unable to connect to KEGG server")

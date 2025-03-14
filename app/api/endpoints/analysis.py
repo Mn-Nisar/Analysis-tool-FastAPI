@@ -293,6 +293,7 @@ async def gene_ontology(data:GeneOntology, user: dict = Depends(auth.get_current
     
     go_data_url = save_df(go_data, name=f"{data.analysis_id}_GO_data", file_format = "csv")
 
+    print("kegg_path_listkegg_path_listkegg_path_list", kegg_path_list)
     q = await db.execute(select(Analysis).filter(Analysis.id == data.analysis_id))
     analysis = q.scalars().first()
     analysis.gene_ontology = go_data_url
@@ -307,15 +308,15 @@ async def kegg_pathway(analysis_id: int,pathway:str, user: dict = Depends(auth.g
     file_url,go_data, gene_col = await get_kegg_data(analysis_id, user, db)
 
     pathway_image, gene_color = get_kegg_pathway(file_url, gene_col,go_data, pathway)
-    
+    print("pathway_image=====================",pathway_image)
     return {"pathway_image":pathway_image,"gene_color":gene_color}
 
-@router.post("/kegg-pathway")
-async def string_db(analysis_id: int,confidence:str, user: dict = Depends(auth.get_current_user),
-                             db: AsyncSession = Depends(get_async_session)):
-    file_url, gene_col = await get_go_data(analysis_id, user, db)
-    df = get_data_frame(file_url,index_col = gene_col )
-    df = df.reset_index()
-    genes = df[gene_col].tolist()
+# @router.post("/kegg")
+# async def string_db(analysis_id: int,confidence:str, user: dict = Depends(auth.get_current_user),
+#                              db: AsyncSession = Depends(get_async_session)):
+#     file_url, gene_col = await get_go_data(analysis_id, user, db)
+#     df = get_data_frame(file_url,index_col = gene_col )
+#     df = df.reset_index()
+#     genes = df[gene_col].tolist()
 
-    return {'genes':genes}
+#     return {'genes':genes}
