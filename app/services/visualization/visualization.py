@@ -215,7 +215,7 @@ def plot_volcano_diff(df,lfc, pv, lg2cut, pvalue_cut_off, genes, title, analysis
     difex_ptn['Downregulated'] = df.loc[df['color_add_axy'] == color[2], genes].tolist()
 
     df['color_add_axy'].replace('nan', np.nan, inplace=True)                       #edit
-    df['color_add_axy'].fillna('gray', inplace=True)                               #edit
+    df['color_add_axy'].fillna('grey', inplace=True)                               #edit
 
     plt.scatter(x = df[lfc], y = df[pv], s = 26 , c = df['color_add_axy'], alpha=0.8)
 
@@ -482,7 +482,7 @@ def add_labels(angles, values, labels, offset, ax):
         )
 
 def get_circbar_plot(df, analysis_id):
-
+    # column nmaes =[name, value, group]
     plt.switch_backend('AGG')
     df["strvalue"] = df["value"].astype(str)
     df["strvalue"] = df["strvalue"].apply(lambda x: '('+x+')')

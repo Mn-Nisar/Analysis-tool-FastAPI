@@ -19,34 +19,34 @@ def plot_pipeline(file_url, plot_type,meta_data, viz_id):
         df = format_circ_df(df,meta_data)
         plot = get_circbar_plot(df,unique_id)
     
-    elif plot_type == "volcano":
-        plot = volcano_plot(df,meta_data)
-    elif plot_type == "pca":
-        plot = pca_plot(df,meta_data)
-    elif plot_type == "rain":
-        plot = rain_plot(df,meta_data)
-    elif plot_type == "ma-plot":
-        plot = ma_plot(df,meta_data)
-    elif plot_type == "heatmap-heirarch":
-        plot = heatmap_heirarch(df,meta_data)
-    elif plot_type == "heatmap-kmean":
-        plot = heatmap_kmean(df,meta_data)
-    elif plot_type == "upset":
-        plot = upset_plot(df,meta_data)
-    elif plot_type == "density":
-        plot = density_plot(df,meta_data)
-    elif plot_type == "violion":
-        plot = violion_plot(df,meta_data)
-    elif plot_type == "box":
-        plot = box_plot(df,meta_data)
-    elif plot_type == "bubble":
-        plot = bubble_plot(df,meta_data)
-    elif plot_type == "histogram":
-        plot = histogram_plot(df,meta_data)
-    elif plot_type == "s-curve":
-        plot = s_curve_plot(df,meta_data)
-    elif plot_type == "venn":
-        plot = venn_plot(df,meta_data)
+    # elif plot_type == "volcano":
+    #     plot = volcano_plot(df,meta_data)
+    # elif plot_type == "pca":
+    #     plot = pca_plot(df,meta_data)
+    # elif plot_type == "rain":
+    #     plot = rain_plot(df,meta_data)
+    # elif plot_type == "ma-plot":
+    #     plot = ma_plot(df,meta_data)
+    # elif plot_type == "heatmap-heirarch":
+    #     plot = heatmap_heirarch(df,meta_data)
+    # elif plot_type == "heatmap-kmean":
+    #     plot = heatmap_kmean(df,meta_data)
+    # elif plot_type == "upset":
+    #     plot = upset_plot(df,meta_data)
+    # elif plot_type == "density":
+    #     plot = density_plot(df,meta_data)
+    # elif plot_type == "violion":
+    #     plot = violion_plot(df,meta_data)
+    # elif plot_type == "box":
+    #     plot = box_plot(df,meta_data)
+    # elif plot_type == "bubble":
+    #     plot = bubble_plot(df,meta_data)
+    # elif plot_type == "histogram":
+    #     plot = histogram_plot(df,meta_data)
+    # elif plot_type == "s-curve":
+    #     plot = s_curve_plot(df,meta_data)
+    # elif plot_type == "venn":
+    #     plot = venn_plot(df,meta_data)
     else:
         plot = "Invalid plot type"
     

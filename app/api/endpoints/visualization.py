@@ -37,7 +37,7 @@ async def chose_plot(data: PlotData,
         raise HTTPException(status_code=400, detail="Invalid data")
 
 @router.post("/vizualize")
-async def chose_plot(data:VizualizeSchema,
+async def vizualize(data:VizualizeSchema,
                     user: dict = Depends(auth.get_current_user), 
                     db: AsyncSession = Depends(get_async_session)):
     
