@@ -310,12 +310,11 @@ async def kegg_pathway(analysis_id: int,pathway:str, user: dict = Depends(auth.g
     pathway_image, gene_color = get_kegg_pathway(file_url, gene_col,go_data, pathway)
     return {"pathway_image":pathway_image,"gene_color":gene_color}
 
-# @router.post("/kegg")
-# async def string_db(analysis_id: int,confidence:str, user: dict = Depends(auth.get_current_user),
-#                              db: AsyncSession = Depends(get_async_session)):
-#     file_url, gene_col = await get_go_data(analysis_id, user, db)
-#     df = get_data_frame(file_url,index_col = gene_col )
-#     df = df.reset_index()
-#     genes = df[gene_col].tolist()
-
-#     return {'genes':genes}
+@router.post("/string-analysis")
+async def string_analysis(analysis_id: int,confidence:str, user: dict = Depends(auth.get_current_user),
+                             db: AsyncSession = Depends(get_async_session)):
+    file_url, gene_col = await get_go_data(analysis_id, user, db)
+    df = get_data_frame(file_url,index_col = gene_col )
+    df = df.reset_index()
+    genes = df[gene_col].tolist()
+    return {'genes':genes,'confidence':confidence}
