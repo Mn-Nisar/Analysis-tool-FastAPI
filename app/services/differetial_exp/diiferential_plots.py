@@ -27,6 +27,8 @@ def get_volcano_plot(file_url, index_col, columns_data, metadata,analysis_id):
         title = get_tile(col,metadata["control_name"])
         vol_df = df[columns].reset_index()
 
+        print(vol_df,fc_col,p_val_col,metadata["log2_cut"],metadata["pv_cutoff"],index_col,title, analysis_id)
+
         volcano_plot_url,expressed_genes = plot_volcano_diff(vol_df,fc_col,p_val_col,metadata["log2_cut"],metadata["pv_cutoff"],index_col,title, analysis_id)
         volcano_plots.append([volcano_plot_url,expressed_genes])
 

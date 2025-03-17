@@ -21,11 +21,11 @@ def get_s3_url(plot_titel, analysis_id):
     
     buffer = BytesIO()
     
-    plt.savefig(buffer, format = 'svg')
+    plt.savefig(buffer, format = 'png')
     
     buffer.seek(0)
     
-    file_name = f"plots/{str(analysis_id)}_{plot_titel}.svg" 
+    file_name = f"plots/{str(analysis_id)}_{plot_titel}.png" 
     
     if PRODUCTION:
         file_url = save_to_s3(buffer, file_name)
@@ -190,7 +190,7 @@ def plot_volcano_diff(df,lfc, pv, lg2cut, pvalue_cut_off, genes, title, analysis
     lfc_thr = ( lg2cut,-lg2cut)
 
     color=("red", "grey", "green","black")
-
+    df[pv]  = -np.log10(df[pv])
     df.loc[(df[lfc] >= lfc_thr[0]) & (df[pv] > pv_thr), 'color_add_axy'] = color[0]  # upregulated
     df.loc[(df[lfc] <= lfc_thr[1]) & (df[pv] > pv_thr), 'color_add_axy'] = color[2]  # downregulated
     df.loc[(df[lfc] > lfc_thr[1]) & (df[pv] > pv_thr) & (df[lfc] < lfc_thr[0]), 'color_add_axy'] = color[3]

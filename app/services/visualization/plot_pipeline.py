@@ -2,7 +2,7 @@ import datetime
 
 from app.services.data_processing.data_preprocess import get_data_frame
 from app.services.visualization.utils import format_circ_df
-from  app.services.visualization.visualization import get_circbar_plot
+from  app.services.visualization.visualization import get_circbar_plot, plot_volcano_diff
 
 
 def plot_pipeline(file_url, plot_type,meta_data, viz_id):
@@ -19,8 +19,10 @@ def plot_pipeline(file_url, plot_type,meta_data, viz_id):
         df = format_circ_df(df,meta_data)
         plot = get_circbar_plot(df,unique_id)
     
-    # elif plot_type == "volcano":
-    #     plot = volcano_plot(df,meta_data)
+    elif plot_type == "volcano":
+        plot = plot_volcano_diff(df,meta_data["fold_change"],meta_data["p_value"],meta_data["log2_cut"],
+                        meta_data["pv_cutoff"],meta_data["selected_index"],"volcano plot", unique_id)
+
     # elif plot_type == "pca":
     #     plot = pca_plot(df,meta_data)
     # elif plot_type == "rain":

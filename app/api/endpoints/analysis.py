@@ -19,9 +19,7 @@ from app.services.aws_s3.save_to_s3 import save_df, save_lable_free_df
 from app.services.differetial_exp.diff_pipeline import diff_pipeline
 from app.services.lable_free.lable_free_analysis import protien_identify
 from app.services.normalization.batch_correction import batch_correction_pipeline
-from app.services.differetial_exp.diiferential_plots import get_volcano_plot, get_heatmap_plot, get_kmean_plot, get_kegg_pathway
-from app.services.differetial_exp.diiferential_plots import go_analysis
-import io 
+from app.services.differetial_exp.diiferential_plots import get_volcano_plot, get_heatmap_plot, get_kmean_plot, get_kegg_pathway , go_analysis
 
 settings = Settings()
  
