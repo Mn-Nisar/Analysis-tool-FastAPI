@@ -287,3 +287,25 @@ async def get_plot_url(plot_id, user, db, *args,**kwargs):
     if not viz:
         raise HTTPException(status_code=404, detail="Analysis not found or unauthorized")
     return viz.file_url, viz.viz_type
+
+
+def result_bar_graph_data(df):
+    df = df[[i for i in df.columns if i.startswith('expression_')]]
+    df.rename(columns = lambda x : x.replace('expression_',''), inplace = True)
+
+    up_reg = "up-regulated"
+    down_reg = "down-regulated"
+
+    data = {
+        "samples": list(df.columns),
+        "upregulation": [],
+        "down_regulation": []
+    }
+
+    for sample in data["samples"]:
+        up_count = int((df[sample] == up_reg).sum())
+        down_count = int((df[sample] == down_reg).sum())
+        
+        data["upregulation"].append(up_count)
+        data["down_regulation"].append(down_count)
+    return data

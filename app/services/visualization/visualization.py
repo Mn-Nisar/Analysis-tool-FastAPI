@@ -130,57 +130,6 @@ def get_box_plot(df, title, columns, analysis_id,normalized=False):
     return get_plot_url
 
 
-
-
-def result_bar_graph(df, analysis_id):
-    df = df[[i for i in df.columns if i.startswith('expression_')]]
-
-    updict = {}
-    downdict = {}
-
-    for column in df.columns:
-        counts = df[column].value_counts()
-        updict[column] = counts.get('up-regulated', 0)
-        downdict[column] = counts.get('down-regulated', 0)
-
-    upmax = max(updict.values(), default=0)
-    downmax = max(downdict.values(), default=0)
-
-
-    fig, ax = plt.subplots()
-    plt.xticks(rotation=90, fontsize = 6)
-
-    ax.bar(updict.keys(),updict.values(), color = 'red')
-    ax.bar(downdict.keys(),[x*-1 for x in downdict.values()], color = 'green')
-
-    ax.set_ylim(-downmax-5, upmax+5)
-
-    upareg = list(updict.values())
-    downreg = [x*-1 for x in downdict.values()]
-
-
-    for i in range(len(upareg)):
-        plt.text(i,upareg[i], upareg[i], ha = 'center')
-
-
-    for j in range(len(downreg)):
-        plt.text(j,downreg[j]-2, abs(downreg[j]), ha = 'center', va = 'bottom')
-
-    ticks =  ax.get_yticks()
-    ax.set_yticklabels([int(abs(tick)) for tick in ticks])
-    plt.axhline(y= 0 , linestyle='-', color='#7d7d7d', linewidth=1)
-
-    custom_lines = [Line2D([0], [0], color='red', lw=4),
-                Line2D([0], [0], color='green', lw=4)]
-    plt.ylabel("Number of proteins")
-    ax.legend(custom_lines, ['Upregulated', 'Downregulated'])
-
-    plt.tight_layout()
-
-    get_plot_url = get_s3_url("result_bar_plot",analysis_id)
-    return get_plot_url
-
-
      
 def plot_volcano_diff(df,lfc, pv, lg2cut, pvalue_cut_off, genes, title, analysis_id):
     

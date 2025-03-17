@@ -1,7 +1,6 @@
-from app.services.data_processing.data_preprocess import get_data_frame
+from app.services.data_processing.data_preprocess import get_data_frame, result_bar_graph_data
 from app.services.differetial_exp.p_value import calc_p_value
 from app.services.differetial_exp.foldchange import calc_foldchange
-from app.services.visualization.visualization import result_bar_graph
 
 
 def get_diff_df(df,data):
@@ -28,7 +27,7 @@ def diff_pipeline(file_url,data, columns, idex_col):
 
     diff_df = get_diff_df(df,data)
 
-    bargraph = result_bar_graph(diff_df, data.analysis_id)
+    bargraph = result_bar_graph_data(diff_df)
 
     return df,diff_df,bargraph 
     
