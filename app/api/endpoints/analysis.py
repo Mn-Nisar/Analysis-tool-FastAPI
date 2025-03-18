@@ -153,7 +153,8 @@ async def differentail_analysis(data: Differential,user: dict = Depends(auth.get
         file_url, index_col, columns_data = await get_file_url(data.analysis_id, user, db, get_normalized=True)
         columns = get_norm_columns(columns_data)
 
-    df,diff_df,bargraph  = diff_pipeline(file_url,data, columns, index_col)
+    df,diff_df,bargraph , diff_prot_total = diff_pipeline(file_url,data, columns, index_col)
+    total_proteins = df.shape[0]
     final_df = save_df(df, name=f"{data.analysis_id}_final_data", file_format = "csv")
     diff_df_url = save_df(diff_df, name=f"{data.analysis_id}_differential_data", file_format = "csv")
 
@@ -178,7 +179,8 @@ async def differentail_analysis(data: Differential,user: dict = Depends(auth.get
 
     await db.commit()
 
-    return {"analysis_id":data.analysis_id,"final_df":final_df,"diff_df":diff_df_url,"bargraph":bargraph}
+    return {"analysis_id":data.analysis_id,"final_df":final_df,"diff_df":diff_df_url,"bargraph":bargraph, "total_proteins":total_proteins,
+            "diff_prot_total":diff_prot_total}
 
     # except Exception as e:  
     #     raise HTTPException(status_code=500, detail=str(e))

@@ -12,7 +12,7 @@ def get_diff_df(df,data):
         diff_df = df[[i for i in df.columns if i.startswith('expression_') or i.startswith('fold_change_') ]]
     diff_df = diff_df.dropna(subset=expression_cols, how='all')
 
-    return diff_df
+    return diff_df , diff_df.shape[0]
 
 def diff_pipeline(file_url,data, columns, idex_col):
     
@@ -25,11 +25,11 @@ def diff_pipeline(file_url,data, columns, idex_col):
 
     df = calc_foldchange(df,columns,data.choose_control,data)
 
-    diff_df = get_diff_df(df,data)
+    diff_df, diff_prot_total = get_diff_df(df,data)
 
     bargraph = result_bar_graph_data(diff_df)
 
-    return df,diff_df,bargraph 
+    return df,diff_df,bargraph ,diff_prot_total
     
 
 
